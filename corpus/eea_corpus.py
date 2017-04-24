@@ -21,13 +21,18 @@ class EEACorpus(object):
         s = 'EEA Corpus'
         return s
 
-    def create_corpus(self, fpath):
+    def create_corpus(self, fpath, normalise=False):
         """
         Load csv file from fpath. Each row is one document.
         It expects first column to be the Text / Body we want to analyse with
         textacy. The rest of the columns are stored as metadata associated
         to each document.
-
+        
+        If normalise is set to True many aspects of the text will be 
+        normalised like bad unicode, currency symbols, phone numbers, urls, 
+        emails, punctuations, accents etc. 
+        see textacy.preprocess.preprocess_text for details.
+        
         Returns a textacy.Corpus.
         """
 
@@ -38,6 +43,9 @@ class EEACorpus(object):
         # the rest is metadata
         content_stream, metadata_stream = textacy.fileio.split_record_fields(
             eeadocs, 0)
+            
+        if normalise:
+            content_stream = self._normalise_content_stream(content_stream)
 
         # create textacy english Corpus
         corpus = textacy.Corpus('en', texts=content_stream,
@@ -45,7 +53,7 @@ class EEACorpus(object):
 
         return corpus
 
-    def load_or_create_corpus(self, fpath):
+    def load_or_create_corpus(self, fpath, normalise=False):
         base, fname = os.path.split(fpath)
         varpath = os.path.join(base, 'var')
         cpath = os.path.join(varpath, fname)
@@ -59,7 +67,28 @@ class EEACorpus(object):
             return textacy.Corpus.load(cpath, name=CORPUS_NAME)
 
         print('Creating corpus', fpath, cpath)
-        corpus = self.create_corpus(fpath)
+        corpus = self.create_corpus(fpath, normalise)
         # corpus.save(cpath, name=CORPUS_NAME)
 
         return corpus
+
+
+    def _normalise_content_stream(self, content_stream):
+        """
+        Iterate over the content, yielding one normalised content.
+        
+        Many aspects of the text will be normalised like bad unicode, 
+        currency symbols, phone numbers, urls, emails, punctuations, accents etc. 
+            
+        Yields:
+            str: normalised plain text for the next document. 
+        """
+        for content in content_stream:
+            print('before->',content)
+            content = textacy.preprocess.preprocess_text(content, 
+                    fix_unicode=True, lowercase=False, transliterate=True, 
+                    no_urls=True, no_emails=True, no_phone_numbers=True, 
+                    no_numbers=True, no_currency_symbols=True, no_punct=False,
+                    no_contractions=True, no_accents=True)
+            print('after-->',content)
+            yield content

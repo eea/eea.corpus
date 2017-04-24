@@ -11,7 +11,8 @@ import eea_corpus
 import textacy
 import vis
 
-corpus = eea_corpus.EEACorpus().load_or_create_corpus('data.csv')
+corpus = eea_corpus.EEACorpus().load_or_create_corpus(fpath='data.csv',
+                                normalise=True)
 
 print('Corpus: ', corpus)
 
