@@ -84,11 +84,9 @@ class EEACorpus(object):
             str: normalised plain text for the next document. 
         """
         for content in content_stream:
-            print('before->',content)
             content = textacy.preprocess.preprocess_text(content, 
                     fix_unicode=True, lowercase=False, transliterate=True, 
                     no_urls=True, no_emails=True, no_phone_numbers=True, 
                     no_numbers=True, no_currency_symbols=True, no_punct=False,
                     no_contractions=True, no_accents=True)
-            print('after-->',content)
             yield content
