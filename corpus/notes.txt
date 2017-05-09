@@ -1,0 +1,53 @@
+Ideas on what to improve and do next:
+
+1. DONE Add full body of pages / content types in csv file
+
+2. Better tokenizier and pre-paration of text before topic modeling is applied:
+
+01. val source = CSVFile("pubmed-oa-subset.csv") ~> IDColumn(1);
+02.
+03. val tokenizer = {
+04.  SimpleEnglishTokenizer() ~>            // tokenize on space and punctuation
+05.  CaseFolder() ~>                        // lowercase everything
+06.  WordsAndNumbersOnlyFilter() ~>         // ignore non-words and non-numbers
+07.  MinimumLengthFilter(3)                 // take terms with >=3 characters
+08.  }
+09.
+10. val text = {
+11.  source ~>                              // read from the source file
+12.  Column(4) ~>                           // select column containing text
+13.  TokenizeWith(tokenizer) ~>             // tokenize with tokenizer above
+14.  TermCounter() ~>                       // collect counts (needed below)
+15.  TermMinimumDocumentCountFilter(4) ~>   // filter terms in <4 docs
+16.  TermDynamicStopListFilter(30) ~>       // filter out 30 most common terms
+17.  DocumentMinimumLengthFilter(5)         // take only docs with >=5 terms
+18. }
+
+read more on https://nlp.stanford.edu/software/tmt/tmt-0.4/
+
+3. DONE strip html code from text with beautifulsoup4
+
+4. DONE Install phrasemachine
+
+#install pip2.7
+curl -O https://bootstrap.pypa.io/get-pip.py
+sudo python2.7 get-pip.py
+pip2 install phrasemachine
+
+#Or better convert to python3
+https://github.com/slanglab/phrasemachine/issues/9
+2to3 -w example.py
+
+cd /usr/local/lib/python3.6/site-packages/phrasemachine
+2to3 -w *.py
+
+5. when tokenizing with phrasemachine, do it on one sentence at the time and
+not over a large text. Otherwise you get too many phrases and false positives 
+made up of words from multiple sentences, somehow phrasemachine expects one
+sentence only. OR give up with full text and use only title and description.
+
+6. Stemming?
+
+7. If we take only Title, use only document with Title that has at least 5 terms
+
+8. provide SPACY API see https://github.com/jgontrum/spacy-api-docker

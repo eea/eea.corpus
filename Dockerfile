@@ -22,8 +22,14 @@ RUN pip --no-cache-dir install \
         spacy \
         unidecode \
         pyldavis \
-        textacy
-        
+        beautifulsoup4 \
+        phrasemachine \
+        textacy 
+
+# convert phrasemachine to python3 code
+RUN cd /usr/local/lib/python3.6/site-packages/phrasemachine \
+        && 2to3 -w *.py
+
 # Download best-matching default spacy english model
 # RUN python -m spacy download en
 RUN python -m spacy.en.download all

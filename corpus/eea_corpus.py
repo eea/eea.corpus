@@ -8,6 +8,8 @@
 from __future__ import unicode_literals
 import os
 import textacy
+from bs4 import BeautifulSoup
+import phrasemachine
 
 CORPUS_NAME = 'eeacorpus'
 
@@ -72,6 +74,16 @@ class EEACorpus(object):
 
         return corpus
 
+    def _tokenize_phrases(self, content):
+        """
+        Find phrases in content via phrasemachine and return content where
+        phrases are tokenized with '_' like 'air_pollution' so that they can
+        be treated as new words. 
+        """
+        # get phrases
+        phrases = phrasemachine.get_phrases(content)
+        tokens = [p.replace(' ','_') for p in phrases['counts']]
+        return tokens
 
     def _normalise_content_stream(self, content_stream):
         """
@@ -83,10 +95,24 @@ class EEACorpus(object):
         Yields:
             str: normalised plain text for the next document. 
         """
+        i = 0
         for content in content_stream:
+            i +=1
+            if i % 100 == 0:
+                print(str(i)) # show progress in terminal
+                
+            # first let us clean any html code
+            soup = BeautifulSoup(content, 'html.parser')
+            content = soup.get_text()
+            
+            # then pre-proccess via textacy
             content = textacy.preprocess.preprocess_text(content, 
                     fix_unicode=True, lowercase=False, transliterate=True, 
                     no_urls=True, no_emails=True, no_phone_numbers=True, 
                     no_numbers=True, no_currency_symbols=True, no_punct=False,
                     no_contractions=True, no_accents=True)
+            
+            # we are only interested in high level concepts
+            content = ' '.join(self._tokenize_phrases(content))
+            
             yield content

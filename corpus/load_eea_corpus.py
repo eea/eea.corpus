@@ -73,9 +73,7 @@ print('DTM: ', repr(doc_term_matrix))
 
 
 # Train and interpret a topic model:
-
-# model = textacy.tm.TopicModel('nmf', n_topics=10)
-model = textacy.tm.TopicModel('lda', n_topics=10)
+model = textacy.tm.TopicModel('lda', n_topics=20)
 model.fit(doc_term_matrix)
 
 # Transform the corpus and interpret our model:
@@ -94,6 +92,7 @@ for (topic_idx, top_docs) in model.top_topic_docs(doc_topic_matrix,
     print(topic_idx)
     for j in top_docs:
         print(corpus[j].metadata[8])
+        print(corpus[j])
 
 prep_data = vis.prepare(model.model, doc_term_matrix, id2term)
 show(prep_data)
