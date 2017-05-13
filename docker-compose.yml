@@ -1,0 +1,3 @@
+shell:
+    build: .
+    command: sh -c "tail -f /dev/null"
