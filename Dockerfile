@@ -38,6 +38,8 @@ RUN pip --no-cache-dir install \
 RUN cd /usr/local/lib/python3.6/site-packages/phrasemachine \
         && 2to3 -w *.py
 
+RUN pip --no-cache-dir install click
+
 COPY corpus /corpus
 
 WORKDIR /corpus
