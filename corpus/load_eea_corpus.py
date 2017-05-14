@@ -66,7 +66,7 @@ def extras(corpus):
     help="Normalize text. Warning, heaving processing."
 )
 @click.option(
-    '-d', '--data', default='data.csv', help="Path to CSV file to process")
+    '--data', default='data.csv', help="Path to CSV file to process")
 def main(normalize, data):
     print("Processing file {} with normalize {}".format(data, normalize))
     ec = eea_corpus.EEACorpus()
