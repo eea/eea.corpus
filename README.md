@@ -28,7 +28,8 @@ collection of documents.
 The latest EEA Corpus dataset can be produced by visiting 
 [global catalogue](http://search.apps.eea.europa.eu/)  > See all results > download csv.
 
-Once the csv file is downloaded, you can pass it to this application to be analysed.
+Once the csv file is downloaded, you can pass it to this application to be analysed. Make sure your
+first column is the "document text" to be analysed. The other columns are considered metadata.
 
 You may download an already generated large EEA corpus data for testing like this:
 curl -L -o data.csv https://www.dropbox.com/s/sihmoc4wwpl0kr2/data_all.csv?dl=1

@@ -80,6 +80,12 @@ class EEACorpus(object):
         phrases are tokenized with '_' like 'air_pollution' so that they can
         be treated as new words. 
         """
+        # TODO: split content into sentences list
+        # for each sentence get phrases
+        # include only phrase that have max 3 words (customisable) 
+        # ignoring stopwords
+        # optionally, if vocabulary provided (GEMET, EEA tags/glossary), ignore
+        # phrases that do not contain any vocabulary term of from it.
         # get phrases
         phrases = phrasemachine.get_phrases(content)
         tokens = [p.replace(' ','_') for p in phrases['counts']]
