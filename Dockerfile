@@ -1,8 +1,9 @@
-FROM floydhub/spacy:latest
+FROM floydhub/python-base:latest-gpu-py3
+
 MAINTAINER "Antonio De Marinis" <demarinis@eea.europa.eu>
 
 # Install essential dependencies
-RUN pip --no-cache-dir install \
+RUN pip --no-cache-dir install -U \
         backports.csv \
         cachetools \
         cytoolz \
@@ -18,27 +19,21 @@ RUN pip --no-cache-dir install \
         requests \
         scipy \
         scikit-learn \
-        spacy \
         beautifulsoup4 \
-        unidecode
-
-# Download best-matching default spacy english model
-# RUN python -m spacy download en
-RUN python -m spacy.en.download all
+        unidecode \
+        click
 
 RUN pip --no-cache-dir install \
         cld2-cffi \
         pyldavis \
+        phrasemachine \
         textacy
 
-RUN pip --no-cache-dir install \
-        phrasemachine
-
-# convert phrasemachine to python3 code
-RUN cd /usr/local/lib/python3.6/site-packages/phrasemachine \
+# # convert phrasemachine to python3 code
+RUN cd /usr/local/lib/python3.5/site-packages/phrasemachine \
         && 2to3 -w *.py
 
-RUN pip --no-cache-dir install click
+RUN python -m spacy.en.download all
 
 COPY corpus /corpus
 

@@ -72,6 +72,7 @@ def main(normalize, data):
     ec = eea_corpus.EEACorpus()
     corpus = ec.load_or_create_corpus(fpath=data, normalize=normalize)
 
+    print("Created corpus")
     extras(corpus)
 
     # Represent corpus as a document-term matrix, with flexible weighting and
@@ -80,9 +81,14 @@ def main(normalize, data):
         doc.to_terms_list(ngrams=1, named_entities=True, as_strings=True)
         for doc in corpus
     )
-    doc_term_matrix, id2term = textacy.vsm.doc_term_matrix(
-        docs, weighting='tfidf', normalize=True, smooth_idf=True, min_df=2,
-        max_df=0.95, max_n_terms=100000)
+    vectorizer = textacy.vsm.Vectorizer(
+            weighting='tfidf',
+            normalize=True, smooth_idf=True, min_df=2, max_df=0.95,
+            max_n_terms=100000)
+    doc_term_matrix = vectorizer.fit_transform(docs)
+    id2term = dict(
+        zip(vectorizer.vocabulary.values(), vectorizer.vocabulary.keys())
+    )
 
     print('DTM: ', repr(doc_term_matrix))
 
