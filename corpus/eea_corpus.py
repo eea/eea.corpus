@@ -74,7 +74,7 @@ class EEACorpus(object):
 
         print('Creating corpus', fpath, cpath)
         corpus = self.create_corpus(fpath, normalize, optimize_phrases)
-        # corpus.save(cpath, name=CORPUS_NAME)
+        corpus.save(cpath, name=CORPUS_NAME)
 
         return corpus
 
