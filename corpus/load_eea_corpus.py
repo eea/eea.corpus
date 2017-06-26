@@ -62,7 +62,11 @@ def extras(corpus):
 
 @click.command()
 @click.option(
-    '--column', default='text', help="The CSV Column that holds the text"
+    '--column', default='text', help="The CSV Column that holds the text."
+)
+@click.option(
+    '--topics', default=20,
+    help="Number of topics to extract."
 )
 @click.option(
     '--normalize', is_flag=True, default=False,
@@ -74,7 +78,7 @@ def extras(corpus):
 )
 @click.option(
     '--data', default='data.csv', help="Path to CSV file to process")
-def main(column, normalize, optimize_phrases, data):
+def main(column, topics, normalize, optimize_phrases, data):
     print("Processing file {} with normalize {}".format(data, normalize))
     ec = eea_corpus.EEACorpus()
     corpus = ec.load_or_create_corpus(
@@ -106,7 +110,7 @@ def main(column, normalize, optimize_phrases, data):
     print('DTM: ', repr(doc_term_matrix))
 
     # Train and interpret a topic model:
-    model = textacy.tm.TopicModel('lda', n_topics=20)
+    model = textacy.tm.TopicModel('lda', n_topics=topics)
     model.fit(doc_term_matrix)
 
     # Transform the corpus and interpret our model:
