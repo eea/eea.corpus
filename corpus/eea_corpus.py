@@ -24,7 +24,8 @@ class EEACorpus(object):
         s = 'EEA Corpus'
         return s
 
-    def create_corpus(self, fpath, normalize=False):
+    def create_corpus(self, fpath, text_column='text', normalize=False,
+                      optimize_phrases=False):
         """
         Load csv file from fpath. Each row is one document.
         It expects first column to be the Text / Body we want to analyse with
@@ -44,10 +45,12 @@ class EEACorpus(object):
 
         # use first column from the csv file as the text to analyse.
         # the rest is metadata
-        content_stream, metadata_stream = split_record_fields(eeadocs, 0)
+        content_stream, metadata_stream = split_record_fields(eeadocs,
+                                                              text_column)
 
         if normalize:
-            content_stream = self._normalize_content_stream(content_stream)
+            content_stream = self._normalize_content_stream(content_stream,
+                                                            optimize_phrases)
 
         # create textacy english Corpus
         corpus = textacy.Corpus('en', texts=content_stream,
@@ -55,7 +58,8 @@ class EEACorpus(object):
 
         return corpus
 
-    def load_or_create_corpus(self, fpath, normalize=False):
+    def load_or_create_corpus(self, fpath, text_column='text', normalize=False,
+                              optimize_phrases=False):
         base, fname = os.path.split(fpath)
         varpath = os.path.join(base, 'var')
         cpath = os.path.join(varpath, fname)
@@ -69,7 +73,7 @@ class EEACorpus(object):
             return textacy.Corpus.load(cpath, name=CORPUS_NAME)
 
         print('Creating corpus', fpath, cpath)
-        corpus = self.create_corpus(fpath, normalize)
+        corpus = self.create_corpus(fpath, normalize, optimize_phrases)
         # corpus.save(cpath, name=CORPUS_NAME)
 
         return corpus
@@ -85,7 +89,8 @@ class EEACorpus(object):
         tokens = [p.replace(' ', '_') for p in phrases['counts']]
         return tokens
 
-    def _normalize_content_stream(self, content_stream):
+    def _normalize_content_stream(self, content_stream,
+                                  optimize_phrases=False):
         """
         Iterate over the content, yielding one normalized content.
 
@@ -107,13 +112,15 @@ class EEACorpus(object):
 
             # then pre-proccess via textacy
             content = textacy.preprocess.preprocess_text(
-                    content,
-                    fix_unicode=True, lowercase=False, transliterate=True,
-                    no_urls=True, no_emails=True, no_phone_numbers=True,
-                    no_numbers=True, no_currency_symbols=True, no_punct=False,
-                    no_contractions=True, no_accents=True)
+                content,
+                fix_unicode=True, lowercase=False, transliterate=True,
+                no_urls=True, no_emails=True, no_phone_numbers=True,
+                no_numbers=True, no_currency_symbols=True, no_punct=False,
+                no_contractions=True, no_accents=True
+            )
 
             # we are only interested in high level concepts
-            content = ' '.join(self._tokenize_phrases(content))
+            if optimize_phrases:
+                content = ' '.join(self._tokenize_phrases(content))
 
             yield content
