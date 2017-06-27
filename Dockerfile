@@ -35,8 +35,18 @@ RUN cd /usr/local/lib/python3.5/site-packages/phrasemachine \
 
 RUN python -m spacy.en.download all
 
-COPY corpus /corpus
+RUN pip --no-cache-dir install \
+        gensim
 
-WORKDIR /corpus
+# COPY corpus /corpus
 
-EXPOSE 8888
+COPY src /src
+
+RUN pip install -r /src/eea.corpus/requirements.txt
+RUN pip install -e /src/eea.corpus
+
+WORKDIR /src/eea.corpus
+
+CMD pserve /src/eea.corpus/development.ini
+
+EXPOSE 6543

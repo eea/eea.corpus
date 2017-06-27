@@ -1,0 +1,20 @@
+<div metal:use-macro="load: layout.pt">
+  <div metal:fill-slot="content">
+
+    <div class="content">
+      <h1>
+        <span class="font-semi-bold">EEA</span>
+        <span class="smaller">Corpus Server</span>
+      </h1>
+      <p class="lead">Welcome to <span class="font-normal">EEA Corpus Server</span>.</p>
+      <p><a href="/upload">Upload a new file</a></p>
+      <ul>
+        <li tal:repeat="fname filelist">
+          <a href="/view?f=${fname}">${fname}</a>
+        </li>
+      </ul>
+
+    </div>
+
+  </div>
+</div>
