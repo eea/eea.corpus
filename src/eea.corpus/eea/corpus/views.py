@@ -108,7 +108,7 @@ class TopicsView(FormView):
             corpus = load_or_create_corpus(fpath=fpath,
                                            text_column=text_column,
                                            normalize=True,
-                                           optimize_phrases=True)
+                                           optimize_phrases=False)
             CACHE[fname] = corpus
 
         return CACHE[fname]

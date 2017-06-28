@@ -43,7 +43,8 @@ RUN pip --no-cache-dir install \
 COPY src /src
 
 RUN pip install -r /src/eea.corpus/requirements.txt
-RUN pip install -e /src/eea.corpus
+RUN cd /src/eea.corpus \
+      && python setup.py develop
 
 WORKDIR /src/eea.corpus
 

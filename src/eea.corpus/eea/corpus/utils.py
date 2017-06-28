@@ -89,7 +89,7 @@ def _tokenize_phrases(content):
     be treated as new words.
     """
     # get phrases
-    phrases = phrasemachine.get_phrases(content)
+    phrases = phrasemachine.get_phrases(content)        # , tagger='spacy'
     tokens = [p.replace(' ', '_') for p in phrases['counts']]
     return tokens
 
@@ -110,13 +110,14 @@ def _normalize_content_stream(content_stream, optimize_phrases=False):
         if i % 100 == 0:
             print(str(i))   # show progress in terminal
 
-        if i > 100:
-            break
+        # if i > 100:
+        #     break
 
         if not isinstance(content, str):
             continue
 
         # first let us clean any html code
+        # print("Cleaning up", content[:40])
         try:
             soup = BeautifulSoup(content, 'html.parser')
             content = soup.get_text()

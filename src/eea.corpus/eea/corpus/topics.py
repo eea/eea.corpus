@@ -20,7 +20,7 @@ def extract_topics(corpus, topics):
         for doc in corpus
     )
     vectorizer = textacy.vsm.Vectorizer(
-        weighting='tfidf',
+        weighting='tf', # idf
         normalize=True, smooth_idf=True, min_df=2, max_df=0.95,
         max_n_terms=100000
     )
