@@ -1,15 +1,17 @@
 <div metal:use-macro="load: layout.pt">
   <div metal:fill-slot="content">
 
-    <div class="content" tal:define="m view.metadata; vis view.vis">
-      <h4>${request.params.get('f')}</h4>
+    <div class="content" tal:define="m view.metadata(); vis view.vis">
+      <h2>${request.matchdict.get('name')}</h2>
       <div tal:condition="m">
-        <p>A corpus of ${m.docs} documents, ${m.sentences} and ${m.tokens}
-        tokens in language '${m.lang}'.</p>
+        <p>
+        A corpus of ${m.docs} documents, ${m.sentences} sentences and
+        ${m.tokens} tokens in language '${m.lang}'.
+        </p>
       </div>
 
       <form tal:replace="structure form" ></form>
-      <div tal:condition="vis" tal:replace="structure vis.read()"></div>
+      <div tal:condition="vis" tal:replace="structure vis"></div>
     </div>
 
   </div>

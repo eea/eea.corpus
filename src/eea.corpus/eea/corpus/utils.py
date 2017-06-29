@@ -19,10 +19,11 @@ logger = logging.getLogger('eea.corpus')
 # from textacy.fileio import split_record_fields
 
 CORPUS_NAME = 'eeacorpus'
+CORPUS_STORAGE = "/corpus"
 
 
-def create_corpus(fpath, text_column='text', normalize=False,
-                  optimize_phrases=False):
+def build_corpus(file_name, text_column='text', normalize=False,
+                 optimize_phrases=False):
     """
     Load csv file from fpath. Each row is one document.
     It expects first column to be the Text / Body we want to analyse with
@@ -45,7 +46,8 @@ def create_corpus(fpath, text_column='text', normalize=False,
     # content_stream, metadata_stream = split_record_fields(eeadocs,
     #                                                       text_column)
 
-    df = pd.read_csv(fpath)
+    document_path = os.path.join(CORPUS_STORAGE, file_name)
+    df = pd.read_csv(document_path)
     content_stream = df[text_column].__iter__()
 
     if normalize:
@@ -57,26 +59,69 @@ def create_corpus(fpath, text_column='text', normalize=False,
     return corpus
 
 
-def load_or_create_corpus(fpath, text_column='text', normalize=False,
-                          optimize_phrases=False):
-    base, fname = os.path.split(fpath)
+def corpus_base_path(file_name):
+    """ Returns the /corpus/var/<filename> folder for an uploaded file
+    """
+    varpath = os.path.join(CORPUS_STORAGE, 'var')
+    base = os.path.join(varpath, file_name)
+    return base
+
+
+def corpus_path(file_name, text_column):
+    """ Returns the directory for a corpus based on file name and column
+    """
+    # file_path = os.path.join(CORPUS_STORAGE, file_name)
+    # base, fname = os.path.split(file_path)
     # fname = fname + '-' + text_column
     # fpath = os.path.join(base, fname)
 
-    varpath = os.path.join(base, 'var')
-    cpath = os.path.join(varpath, fname, text_column)
+    base = corpus_base_path(file_name)
+    cpath = os.path.join(base, text_column)
 
     if not os.path.exists(cpath):
         os.makedirs(cpath)
 
+    return cpath
+
+
+def upload_location(file_name):
+    assert not file_name.startswith('.')
+    return os.path.join(CORPUS_STORAGE, file_name)
+
+
+def is_valid_document(file_name):
+    return file_name in os.listdir(CORPUS_STORAGE)
+
+
+def available_columns(file_name):
+    """ Returns available, already-created, corpuses for a filename
+
+    The corpuses corespond to a column in the file.
+    """
+    base = corpus_base_path(file_name)
+    return os.path.exists(base) and os.listdir(base)
+
+
+def available_files():
+    """ Returns a list of available files in the big corpus storage
+    """
+    existing = [f for f in os.listdir(CORPUS_STORAGE) if f.endswith('.csv')]
+    return existing
+
+
+def load_or_create_corpus(file_name, text_column='text', normalize=False,
+                          optimize_phrases=False):
+
+    cpath = corpus_path(file_name, text_column)
     if os.listdir(cpath):
         # if there are any files, assume the corpus is created
         print("Saved corpus exists, loading", cpath)
         return textacy.Corpus.load(cpath, name=CORPUS_NAME)
 
-    print('Creating corpus', fpath, cpath)
-    corpus = create_corpus(fpath, text_column=text_column, normalize=normalize,
-                           optimize_phrases=optimize_phrases)
+    print('Creating corpus', file_name, cpath)
+    corpus = build_corpus(file_name, text_column=text_column,
+                          normalize=normalize,
+                          optimize_phrases=optimize_phrases)
     corpus.save(cpath, name=CORPUS_NAME)
 
     return corpus

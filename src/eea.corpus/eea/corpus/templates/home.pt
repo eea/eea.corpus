@@ -6,11 +6,11 @@
         <span class="font-semi-bold">EEA</span>
         <span class="smaller">Corpus Server</span>
       </h1>
-      <p class="lead">Welcome to <span class="font-normal">EEA Corpus Server</span>.</p>
+      <p class="lead">A ML based <span class="font-normal">topic modeling</span> tool.</p>
       <p><a href="/upload">Upload a new file</a></p>
       <ul>
         <li tal:repeat="fname filelist">
-          <a href="/view?f=${fname}">${fname}</a>
+          <a href="/view/${fname}/">${fname}</a>
         </li>
       </ul>
 

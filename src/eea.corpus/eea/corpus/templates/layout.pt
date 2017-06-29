@@ -8,7 +8,7 @@
     <meta name="author" content="Pylons Project">
     <link rel="shortcut icon" href="${request.static_url('eea.corpus:static/pyramid-16x16.png')}">
 
-    <title>Cookiecutter Starter project for the Pyramid Web Framework</title>
+    <title>EEA Corpus Server</title>
 
     <link href="//oss.maxcdn.com/libs/twitter-bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
     <link href="${request.static_url('eea.corpus:static/theme.css')}" rel="stylesheet">
@@ -28,7 +28,10 @@
           <!-- <div class="col&#45;md&#45;2"> -->
           <!--   <!&#45;&#45; <img class="logo img&#38;#45;responsive" src="${request.static_url('eea.corpus:static/pyramid.png')}" alt="pyramid web framework"> &#45;&#45;> -->
           <!-- </div> -->
-          <div class="col-md-10">
+          <div class="col-md-1">
+            <a href="/">Home</a>
+          </div>
+          <div class="col-md-11">
             <div metal:define-slot="content">No content</div>
           </div>
         </div>
