@@ -27,7 +27,7 @@ p {
   font-weight: 700;
 }
 .starter-template {
-  margin-top: 50px;
+  /* margin-top: 50px; */
 }
 .starter-template .content {
   margin-left: 10px;
@@ -139,7 +139,7 @@ p {
     font-size: 16px;
   }
   .starter-template .links {
-    margin-top: 40px;
+    /* margin-top: 40px; */
   }
   .starter-template .links ul li {
     display: block;
@@ -151,4 +151,8 @@ p {
   .starter-template .copyright {
     margin-top: 20px;
   }
+}
+
+.container-bs {
+  margin: 1em;
 }
