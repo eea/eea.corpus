@@ -1,8 +1,10 @@
-shell:
-    build: .
-    volumes:
-      # - ./corpus:/corpus
-      - ./src:/src
-    command: sh -c "tail -f /dev/null"
-    ports:
-      - "6543:6543"
+version: "2"
+services:
+  shell:
+      build: .
+      volumes:
+        # - ./corpus:/corpus
+        - ./src:/src
+      command: sh -c "tail -f /dev/null"
+      ports:
+        - "6543:6543"

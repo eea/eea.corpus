@@ -1,2 +1,2 @@
 #!/bin/sh
-docker-compose exec shell bash
+docker-compose -f devel-compose.yml exec shell bash

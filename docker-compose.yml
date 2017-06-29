@@ -1,4 +1,6 @@
-pyramid:
-  image: tiberiuichim/topicserver:v0.1
-  ports:
-    - "80:6543"
+version: "2"
+services:
+  pyramid:
+    image: tiberiuichim/topicserver:v0.1
+    ports:
+      - "80:6543"
