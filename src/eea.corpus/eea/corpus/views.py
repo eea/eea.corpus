@@ -147,6 +147,21 @@ class TopicsSchema(Schema):
         a proportion of documents. """,
         default=0.7,
     )
+    mds = SchemaNode(
+        String(),
+        title="mds",
+        description="Multidimensional Scaling algorithm. See "
+        "https://en.wikipedia.org/wiki/Multidimensional_scaling",
+        widget=deform.widget.SelectWidget(
+            values=[
+                ('pcoa', 'PCOA (Classic Multidimensional Scaling)'),
+                ('mmds', 'MMDS (Metric Multidimensional Scaling)'),
+                ('tsne',
+                 't-SNE (t-distributed Stochastic Neighbor Embedding)'),
+            ],
+            default='pcoa'
+        )
+    )
 
 
 @view_config(
@@ -194,6 +209,7 @@ class TopicsView(FormView):
         column = appstruct['column']
         max_df = appstruct['max_df']
         min_df = appstruct['min_df']
+        mds = appstruct['mds']
         num_docs = appstruct['num_docs']
         topics = appstruct['topics']
 
@@ -204,7 +220,7 @@ class TopicsView(FormView):
         }
 
         visualizer = MAP[method]
-        vis = visualizer(corpus, topics, num_docs, min_df, max_df)
+        vis = visualizer(corpus, topics, num_docs, min_df, max_df, mds)
         return vis
 
     def view_success(self, appstruct):
