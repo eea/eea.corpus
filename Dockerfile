@@ -39,6 +39,7 @@ RUN pip --no-cache-dir install \
         gensim
 
 # COPY corpus /corpus
+RUN mkdir /corpus
 
 COPY src /src
 

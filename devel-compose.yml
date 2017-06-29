@@ -1,7 +1,7 @@
 shell:
     build: .
     volumes:
-      - ./corpus:/corpus
+      # - ./corpus:/corpus
       - ./src:/src
     command: sh -c "tail -f /dev/null"
     ports:
