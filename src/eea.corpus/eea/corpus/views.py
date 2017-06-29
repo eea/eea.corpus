@@ -90,6 +90,9 @@ def default_column(file_name, request):
 
 
 def document_name(request):
+    """ Extract document name (aka file_name) from request
+    """
+
     md = request.matchdict or {}
     fname = md.get('name')
     return is_valid_document(fname) and fname
@@ -97,6 +100,8 @@ def document_name(request):
 
 @colander.deferred
 def columns_widget(node, kw):
+    """ A select widget that reads the csv file to show available columns
+    """
 
     choices = []
     req = kw['request']
@@ -149,7 +154,7 @@ class TopicsSchema(Schema):
     )
     mds = SchemaNode(
         String(),
-        title="mds",
+        title="Distance scaling algorithm (not for termite plot)",
         description="Multidimensional Scaling algorithm. See "
         "https://en.wikipedia.org/wiki/Multidimensional_scaling",
         widget=deform.widget.SelectWidget(

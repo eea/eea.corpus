@@ -70,7 +70,7 @@ def pyldavis_visualization(corpus, topics, num_docs=None, min_df=0.1,
 
 
 def termite_visualization(corpus, topics, num_docs=None, min_df=0.1,
-                          max_df=0.7):
+                          max_df=0.7, *args, **kwargs):
     model, doc_term_matrix, id2term = build_model(corpus, topics, num_docs,
                                                   min_df, max_df)
     out = StringIO()

@@ -46,7 +46,7 @@ def build_corpus(file_name, text_column='text', normalize=False,
     # content_stream, metadata_stream = split_record_fields(eeadocs,
     #                                                       text_column)
 
-    document_path = os.path.join(CORPUS_STORAGE, file_name)
+    document_path = upload_location(file_name)
     df = pd.read_csv(document_path)
     content_stream = df[text_column].__iter__()
 
@@ -70,10 +70,6 @@ def corpus_base_path(file_name):
 def corpus_path(file_name, text_column):
     """ Returns the directory for a corpus based on file name and column
     """
-    # file_path = os.path.join(CORPUS_STORAGE, file_name)
-    # base, fname = os.path.split(file_path)
-    # fname = fname + '-' + text_column
-    # fpath = os.path.join(base, fname)
 
     base = corpus_base_path(file_name)
     cpath = os.path.join(base, text_column)
