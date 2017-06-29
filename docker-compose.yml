@@ -1,4 +1,4 @@
 pyramid:
-    build: .
-    ports:
-      - "6543:6543"
+  image: tiberiuichim/topicserver:v0.1
+  ports:
+    - "6543:6543"
