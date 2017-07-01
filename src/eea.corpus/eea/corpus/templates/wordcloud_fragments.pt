@@ -1,0 +1,6 @@
+<div tal:repeat="info topics">
+  <div>
+    <h4>${info[0]}</h4>
+    <div tal:content="structure info[1]"></div>
+  </div>
+</div>

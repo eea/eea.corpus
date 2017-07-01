@@ -5,12 +5,14 @@
 # make sure you have downloaded the language model
 # $ python -m spacy.en.download all
 
+# from eea.corpus import vis
 from __future__ import print_function
 from io import StringIO
 from pyLDAvis import save_html
 from pyLDAvis.sklearn import prepare
+import matplotlib.pyplot as plt
 import textacy
-# from eea.corpus import vis
+import wordcloud
 
 
 class Vectorizer(textacy.vsm.Vectorizer):
@@ -62,7 +64,7 @@ def build_model(corpus, topics, num_docs=None, min_df=0.1, max_df=0.7):
 
 
 def pyldavis_visualization(corpus, topics, num_docs=None, min_df=0.1,
-                           max_df=0.7, mds='pcoa'):
+                           max_df=0.7, mds='pcoa', *args, **kwargs):
     model, doc_term_matrix, vectorizer = build_model(corpus, topics, num_docs,
                                                      min_df, max_df)
     prep_data = prepare(model.model, doc_term_matrix, vectorizer, mds=mds)
@@ -77,10 +79,43 @@ def termite_visualization(corpus, topics, num_docs=None, min_df=0.1,
     model, doc_term_matrix, vectorizer = build_model(corpus, topics, num_docs,
                                                      min_df, max_df)
     out = StringIO()
-    id2term = dict(
-        zip(vectorizer.vocabulary.values(), vectorizer.vocabulary.keys())
-    )
+    id2term = vectorizer.id_to_term
     model.termite_plot(doc_term_matrix, id2term, save=out)
     out.seek(0)
-    bs = out.read()
-    return bs
+    return out.read()
+
+
+def wordcloud_visualization(corpus, topics, num_docs=None, min_df=0.1,
+                            max_df=0.7, mds='pcoa', *args, **kwargs):
+    model, doc_term_matrix, vectorizer = build_model(corpus, topics, num_docs,
+                                                     min_df, max_df)
+    prep_data = prepare(model.model, doc_term_matrix, vectorizer, mds=mds)
+    ti = prep_data.topic_info
+    topic_labels = ti.groupby(['Category']).groups.keys()
+
+    topics = []
+    for label in topic_labels:
+        out = StringIO()
+        df = ti[ti.Category == 'Topic1'].sort_values(by='Total',
+                                                     ascending=False)[:20]
+        tf = dict(df[['Term', 'Total']].to_dict('split')['data'])
+
+        wc = wordcloud.WordCloud()
+        wc.fit_words(tf)
+        plt.imshow(wc)
+        plt.axis('off')
+        plt.savefig(out)
+        out.seek(0)
+        topics.append((label, out.read()))
+
+    return topics
+    """
+     Category         Freq            Term        Total  loglift  logprob
+term
+478   Default   738.000000          specie   738.000000   1.0000   1.0000
+...       ...          ...             ...          ...      ...      ...
+191   Topic10    25.344278           space   145.983738   1.8935  -5.0376
+190   Topic10    32.076070           green   193.201661   1.8488  -4.8020
+319   Topic10    12.129367          aspect    73.063725   1.8488  -5.7745
+
+"""

@@ -1,10 +1,12 @@
 from colander import Int, Schema, SchemaNode, String, Float
 from eea.corpus.topics import pyldavis_visualization
 from eea.corpus.topics import termite_visualization
+from eea.corpus.topics import wordcloud_visualization
 from eea.corpus.utils import available_columns
 from eea.corpus.utils import load_or_create_corpus, available_files
 from eea.corpus.utils import upload_location, is_valid_document
 from pyramid.httpexceptions import HTTPFound
+from pyramid.renderers import render
 from pyramid.view import view_config
 from pyramid_deform import FormView
 import colander
@@ -175,7 +177,7 @@ class TopicsSchema(Schema):
 )
 class TopicsView(FormView):
     schema = TopicsSchema()
-    buttons = ('view', 'termite')
+    buttons = ('view', 'termite', 'wordcloud')
 
     vis = None
 
@@ -222,6 +224,7 @@ class TopicsView(FormView):
         MAP = {
             'pyLDAvis': pyldavis_visualization,
             'termite': termite_visualization,
+            'wordcloud': wordcloud_visualization,
         }
 
         visualizer = MAP[method]
@@ -233,6 +236,14 @@ class TopicsView(FormView):
 
     def termite_success(self, appstruct):
         self.vis = self.visualise(appstruct, method='termite')
+
+    def wordcloud_success(self, appstruct):
+        topics = self.visualise(appstruct, method='wordcloud')
+        out = render('templates/wordcloud_fragments.pt',
+                     {'topics': topics})
+
+        # import pdb; pdb.set_trace()
+        self.vis = out
 
     def before(self, form):
         appstruct = get_appstruct(self.request, self.schema)
