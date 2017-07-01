@@ -62,15 +62,31 @@ def extras(corpus):
 
 @click.command()
 @click.option(
+    '--column', default='text', help="The CSV Column that holds the text."
+)
+@click.option(
+    '--topics', default=20,
+    help="Number of topics to extract."
+)
+@click.option(
     '--normalize', is_flag=True, default=False,
     help="Normalize text. Warning, heaving processing."
 )
 @click.option(
+    '--optimize-phrases', is_flag=True, default=False,
+    help="Optimize topics using phrase extraction."
+)
+@click.option(
     '--data', default='data.csv', help="Path to CSV file to process")
-def main(normalize, data):
+def main(column, topics, normalize, optimize_phrases, data):
     print("Processing file {} with normalize {}".format(data, normalize))
     ec = eea_corpus.EEACorpus()
-    corpus = ec.load_or_create_corpus(fpath=data, normalize=normalize)
+    corpus = ec.load_or_create_corpus(
+        fpath=data,
+        text_column=column,
+        normalize=normalize,
+        optimize_phrases=optimize_phrases,
+    )
 
     print("Created corpus")
     extras(corpus)
@@ -82,9 +98,10 @@ def main(normalize, data):
         for doc in corpus
     )
     vectorizer = textacy.vsm.Vectorizer(
-            weighting='tfidf',
-            normalize=True, smooth_idf=True, min_df=2, max_df=0.95,
-            max_n_terms=100000)
+        weighting='tfidf',
+        normalize=True, smooth_idf=True, min_df=2, max_df=0.95,
+        max_n_terms=100000
+    )
     doc_term_matrix = vectorizer.fit_transform(docs)
     id2term = dict(
         zip(vectorizer.vocabulary.values(), vectorizer.vocabulary.keys())
@@ -93,7 +110,7 @@ def main(normalize, data):
     print('DTM: ', repr(doc_term_matrix))
 
     # Train and interpret a topic model:
-    model = textacy.tm.TopicModel('lda', n_topics=20)
+    model = textacy.tm.TopicModel('lda', n_topics=topics)
     model.fit(doc_term_matrix)
 
     # Transform the corpus and interpret our model:
