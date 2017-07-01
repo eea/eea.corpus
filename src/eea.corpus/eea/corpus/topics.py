@@ -11,6 +11,7 @@ from io import StringIO
 from pyLDAvis import save_html
 from pyLDAvis.sklearn import prepare
 import matplotlib.pyplot as plt
+import pkg_resources
 import textacy
 import wordcloud
 
@@ -87,6 +88,9 @@ def termite_visualization(corpus, topics, num_docs=None, min_df=0.1,
 
 def wordcloud_visualization(corpus, topics, num_docs=None, min_df=0.1,
                             max_df=0.7, mds='pcoa', *args, **kwargs):
+    font = pkg_resources.resource_filename(__name__,
+                                           "fonts/ZillaSlab-Medium.ttf")
+    print (font)
     model, doc_term_matrix, vectorizer = build_model(corpus, topics, num_docs,
                                                      min_df, max_df)
     prep_data = prepare(model.model, doc_term_matrix, vectorizer, mds=mds)
@@ -96,11 +100,12 @@ def wordcloud_visualization(corpus, topics, num_docs=None, min_df=0.1,
     topics = []
     for label in topic_labels:
         out = StringIO()
-        df = ti[ti.Category == 'Topic1'].sort_values(by='Total',
+        df = ti[ti.Category == label].sort_values(by='Total',
                                                      ascending=False)[:20]
         tf = dict(df[['Term', 'Total']].to_dict('split')['data'])
 
-        wc = wordcloud.WordCloud()
+        wc = wordcloud.WordCloud(font_path=font, width=600, height=300,
+                                 background_color='white')
         wc.fit_words(tf)
         plt.imshow(wc)
         plt.axis('off')

@@ -242,7 +242,6 @@ class TopicsView(FormView):
         out = render('templates/wordcloud_fragments.pt',
                      {'topics': topics})
 
-        # import pdb; pdb.set_trace()
         self.vis = out
 
     def before(self, form):
