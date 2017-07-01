@@ -22,6 +22,26 @@ collection of documents.
 
 ![LDA visualisation example](ldavis.png?raw=true "LDA visualisation example")
 
+How to run:
+
+```
+docker-compose build
+docker-compose up -d
+```
+
+Enter the shell of eeacorpus container:
+
+```
+docker exec -it eeacorpus_shell_1 bash
+```
+
+Inside the shell you run: 
+
+```
+python load_eea_corpus.py --normalize --data data-small.csv
+```
+
+This will (after some time) start the visualisation browser on 0.0.0.0:8888
 
 ## EEA Corpus Data
 
