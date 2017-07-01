@@ -97,6 +97,7 @@ def wordcloud_visualization(corpus, topics, num_docs=None, min_df=0.1,
     ti = prep_data.topic_info
     topic_labels = ti.groupby(['Category']).groups.keys()
 
+    plt.clf()
     topics = []
     for label in topic_labels:
         out = StringIO()
