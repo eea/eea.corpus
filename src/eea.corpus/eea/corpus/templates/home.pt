@@ -6,10 +6,19 @@
         <span class="font-semi-bold">EEA</span>
         <span class="smaller">Corpus Server</span>
       </h1>
+
       <p class="lead">A ML based <span class="font-normal">topic modeling</span> tool.</p>
-      <ul>
-        <li tal:repeat="doc documents">
-          <a href="/view/${doc}/">${doc}</a>
+
+      <ul class="list-group">
+        <li class="list-group-item" tal:repeat="doc documents">
+          <div class="btn-toolbar" role="group">
+            <a href="/view/${doc}/" class="btn">
+              ${doc}
+            </a>
+            <a href="/process/${doc}/" class="btn pull-right">
+              <i class="glyphicon glyphicon-cog"></i>
+            </a>
+          </div>
         </li>
       </ul>
 

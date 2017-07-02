@@ -10,6 +10,10 @@ CACHE = {}      # really dummy and simple way to cache corpuses
 
 
 def corpus_cache(request):
+    """ Available as request.corpus_cache.
+
+    Avoids passing the cache around various modules
+    """
     return CACHE
 
 
@@ -29,6 +33,7 @@ def main(global_config, **settings):
     config.add_route('home', '/')
     config.add_route('upload_csv', '/upload')
     config.add_route('view_csv', '/view/{name}/')
+    config.add_route('process_csv', '/process/{name}/')
 
     config.add_request_method(corpus_cache, reify=True)
 

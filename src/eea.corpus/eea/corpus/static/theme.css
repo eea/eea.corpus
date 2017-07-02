@@ -74,7 +74,7 @@ p {
 }
 .starter-template .links ul li a, a {
   /* color: #f2b7bd; */
-  text-decoration: underline;
+  /* text-decoration: underline; */
 }
 .starter-template .links ul li a:hover, a:hover {
   /* color: #ffffff; */
