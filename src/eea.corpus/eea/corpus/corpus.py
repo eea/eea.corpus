@@ -1,6 +1,8 @@
 from bs4 import BeautifulSoup
 from eea.corpus.utils import corpus_path
 from eea.corpus.utils import upload_location
+from textacy.preprocess import preprocess_text
+import inspect
 import logging
 import os
 import pandas as pd
@@ -46,6 +48,13 @@ def _normalize_content_stream(content_stream, **kw):
     Yields:
         str: normalized plain text for the next document.
     """
+
+    textacy_preprocess_args = inspect.getargspec(preprocess_text)
+    t_args = {}
+    for k, v in kw.items():
+        if k in textacy_preprocess_args:
+            t_args[k] = v
+
     i = 0
     for content in content_stream:
         print(i)
@@ -60,15 +69,7 @@ def _normalize_content_stream(content_stream, **kw):
         try:
             soup = BeautifulSoup(content, 'html.parser')
             content = soup.get_text()
-
-            # then pre-proccess via textacy
-            content = textacy.preprocess.preprocess_text(
-                content,
-                fix_unicode=True, lowercase=False, transliterate=True,
-                no_urls=True, no_emails=True, no_phone_numbers=True,
-                no_numbers=True, no_currency_symbols=True, no_punct=False,
-                no_contractions=True, no_accents=True
-            )
+            content = preprocess_text(content, **t_args)
         except Exception:
             logger.warning("Got an error in extracting content: %r", content)
             import pdb; pdb.set_trace()

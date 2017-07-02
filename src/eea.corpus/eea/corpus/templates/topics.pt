@@ -7,7 +7,7 @@
   <div metal:fill-slot="content">
     <div class="content" tal:define="m view.metadata(); vis view.vis">
       <div class="pull-right">
-        <form method="GET" action="/">
+        <form method="GET" action="/process/${request.matchdict.get('name')}/">
           <button class="btn btn-tertiary">
             <span class="glyphicon glyphicon-cog"></span> Reprocess corpus
           </button>
