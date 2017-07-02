@@ -98,7 +98,7 @@ def available_columns(file_name):
     return os.path.exists(base) and os.listdir(base)
 
 
-def available_files():
+def available_documents():
     """ Returns a list of available files in the big corpus storage
     """
     existing = [f for f in os.listdir(CORPUS_STORAGE) if f.endswith('.csv')]
@@ -151,9 +151,6 @@ def _normalize_content_stream(content_stream, optimize_phrases=False):
         if i % 100 == 0:
             print(str(i))   # show progress in terminal
 
-        # if i > 100:
-        #     break
-
         if not isinstance(content, str):
             continue
 
@@ -181,3 +178,34 @@ def _normalize_content_stream(content_stream, optimize_phrases=False):
             content = ' '.join(_tokenize_phrases(content))
 
         yield content
+
+
+def document_name(request):
+    """ Extract document name (aka file_name) from request
+    """
+
+    md = request.matchdict or {}
+    fname = md.get('name')
+    return is_valid_document(fname) and fname
+
+
+def default_column(file_name, request):
+    """ Identify the "default" column.
+
+    * If a given column name is given in request, use that.
+    * if not, identify it the corpus folder has any folders for columns.
+        Use the first available such column
+    """
+    column = request.params.get('column') or ''
+    cache = request.corpus_cache
+
+    # if there's no column, try to identify a column from the cache
+    if not column:
+        columns = list(cache.get(file_name, {}))
+        if columns:
+            column = columns[0]     # grab the first cached
+
+    # if there's no column, try to identify a column from the var dir
+    columns = available_columns(file_name)
+    column = columns and columns[0] or 'text'
+    return column

@@ -30,12 +30,13 @@
           <!-- </div> -->
           <div class="col-md-3">
             <p>
-            <a href="/">Home</a>
+            <a class="btn primary" href="/"><i class="glyphicon glyphicon-home"></i> Home</a>
+            <a class="btn secondary" href="/upload"><i class="glyphicon glyphicon-cloud-upload"></i> Upload a new file</a>
             </p>
-            <div metal:define-slot="sidebar">No content</div>
+            <div metal:define-slot="sidebar"></div>
           </div>
           <div class="col-md-9">
-            <div metal:define-slot="content">No content</div>
+            <div metal:define-slot="content"></div>
           </div>
         </div>
         <div class="row">
