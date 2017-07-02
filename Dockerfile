@@ -27,7 +27,8 @@ RUN pip --no-cache-dir install \
         cld2-cffi \
         pyldavis \
         phrasemachine \
-        textacy
+        textacy \
+        wordcloud
 
 # # convert phrasemachine to python3 code
 RUN cd /usr/local/lib/python3.5/site-packages/phrasemachine \
