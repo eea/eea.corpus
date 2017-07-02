@@ -1,6 +1,6 @@
 version: "2"
 services:
   pyramid:
-    image: tiberiuichim/topicserver:v0.1
+    image: eeacms/corpus:pyramid_service
     ports:
-      - "80:6543"
+      - "8181:6543"
