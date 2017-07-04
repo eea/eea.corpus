@@ -36,3 +36,30 @@ sentence only. OR give up with full text and use only title and description.
 see two examples: 
 based on POS tokens https://github.com/oroszgy/hungarian-text-mining-workshop/blob/master/1_Intro.ipynb which 
 based on pagerank https://github.com/bdewilde/pygotham_2016/blob/master/pygotham_2016.ipynb
+
+10. FEATURE: add t-SNE visualisation. 
+
+e.g. based ona word2vec model of entire corpus 
+https://www.jeffreythompson.org/blog/2017/02/13/using-word2vec-and-tsne/
+
+or just the discovered topics
+http://ahmedbesbes.com/how-to-mine-newsfeed-data-and-extract-interactive-insights-in-python.html
+
+11. FEATURE: preview top documents when hovering/selecting a node on a visualisation (cluster in ldavis, node in the networkviz, node in t-SNE etc). 
+
+12. FEATURE: in preparation text, add possibility to extract via NER-algorithm, e.g. one should be able to tokenise only LOCATIONS and/or PEOPLE and/or ORGANISATIONS etc... and use the standard visualisations provided by eea.corpus (ldaviz,termite,wordcloud or whatever we add).
+
+13. FEATURE: add visualisation via a map viewer. If user chooses to visualise the corpus on a map than the NER extraction of LOCATIONS will take place (or existing one reused) and documents will be clustered on a map, a heatmap would be nice.
+See a nice notebook example https://anaconda.org/jbednar/nyc_taxi/notebook
+
+14. FEATURE: add extra basic corpus visualisations like histograms and distributions.
+  
+15. FEATURE: simple corpus document search engine. enter a word or phrase and get most semantically similar sentences from corpus (based on word2vec/sent2vwc similarity) and its related top documents (where the sentence appears) as results with active link.
+
+16. FEATURE: after the topic modeling is done. give possibility to name the topics discovered, e.g. giving a short name to a topic 1 as "Climate change" and topic 2 "Water" and topic 3 "Organisational" etc. The names are saved and used in subsequence visualisations instead of the topic numbering.
+
+17. FEATURE. Add Wordlcoud for entire corpus on top, below topics wordcloud. Wordcloud should take the terms that are more specific to the topic (lower lambda).
+
+18. FEATURE: add timeline visualisation. Extract dates information via NER and display documents on a histogram / timeline visualisation.
+
+19. FEATURE: use textacy DEPECHEMOOD http://textacy.readthedocs.io/en/latest/api_reference.html?highlight=depech#textacy.data.load_depechemood and cluster documents accordingly and / or visualise the stats.
