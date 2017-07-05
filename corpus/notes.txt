@@ -73,6 +73,9 @@ specific to the topic (lower lambda).
 18. FEATURE: add timeline visualisation. Extract dates information via NER and display documents on a histogram / timeline
 visualisation.
 
-19. FEATURE: use textacy DEPECHEMOOD http://textacy.readthedocs.io/en/latest/api_reference.html?highlight=depech#textacy.data.load_depechemood and cluster documents accordingly and / or visualise the stats.
+19. FEATURE: use textacy DEPECHEMOOD 
+http://textacy.readthedocs.io/en/latest/api_reference.html?highlight=depech#textacy.data.load_depechemood 
+and cluster documents accordingly and / or visualise the stats.
 
-20. FEATURE: add scattertext visualisation https://github.com/JasonKessler/scattertext to compare one topic versus the other topics OR compare two corpora with eachother.
+20. FEATURE: add scattertext visualisation https://github.com/JasonKessler/scattertext to compare one topic versus the other
+topics OR compare two corpora with eachother.
