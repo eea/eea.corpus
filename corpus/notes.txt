@@ -79,3 +79,5 @@ and cluster documents accordingly and / or visualise the stats.
 
 20. FEATURE: add scattertext visualisation https://github.com/JasonKessler/scattertext to compare one topic versus the other
 topics OR compare two corpora with eachother.
+
+21: BUG: if you upload a csv that does not have default text column and uses a column with "Subject", than the preprocessing is not working.
