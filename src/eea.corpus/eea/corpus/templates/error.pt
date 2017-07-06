@@ -25,9 +25,6 @@
     <div class="starter-template">
       <div class="container-bs">
         <div class="row">
-          <!-- <div class="col&#45;md&#45;2"> -->
-          <!--   <!&#45;&#45; <img class="logo img&#38;#45;responsive" src="${request.static_url('eea.corpus:static/pyramid.png')}" alt="pyramid web framework"> &#45;&#45;> -->
-          <!-- </div> -->
           <div class="col-md-3">
             <p>
             <a class="btn primary" href="/"><i class="glyphicon glyphicon-home"></i> Home</a>
@@ -36,27 +33,21 @@
             <div metal:define-slot="sidebar"></div>
           </div>
           <div class="col-md-9">
-            <div metal:define-slot="content"></div>
+            <h1>Error!</h1>
+            <pre><code>${error}</code></pre>
           </div>
         </div>
         <div class="row">
-          <div class="links">
-            <!-- <ul> -->
-            <!--   <li><i class="glyphicon glyphicon&#45;cog icon&#45;muted"></i><a href="https://github.com/Pylons/pyramid">Github Project</a></li> -->
-            <!--   <li><i class="glyphicon glyphicon&#45;globe icon&#45;muted"></i><a href="https://webchat.freenode.net/?channels=pyramid">IRC Channel</a></li> -->
-            <!--   <li><i class="glyphicon glyphicon&#45;home icon&#45;muted"></i><a href="https://pylonsproject.org">Pylons Project</a></li> -->
-            <!-- </ul> -->
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-12">
+          <div class="copyright">
             Copyright &copy; European Environment Agency
           </div>
         </div>
       </div>
     </div>
 
+
     <script src="//oss.maxcdn.com/libs/jquery/1.10.2/jquery.min.js" integrity="sha384-aBL3Lzi6c9LNDGvpHkZrrm3ZVsIwohDD7CDozL0pk8FwCrfmV7H9w8j3L7ikEv6h" crossorigin="anonymous"></script>
     <script src="//oss.maxcdn.com/libs/twitter-bootstrap/3.0.3/js/bootstrap.min.js" integrity="sha384-s1ITto93iSMDxlp/79qhWHi+LsIi9Gx6yL+cOKDuymvihkfol83TYbLbOw+W/wv4" crossorigin="anonymous"></script>
   </body>
 </html>
+

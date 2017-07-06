@@ -1,3 +1,6 @@
+""" Pyramid views. Main UI for the eea.corpus
+"""
+
 from eea.corpus.corpus import build_corpus
 from eea.corpus.corpus import load_corpus
 from eea.corpus.schema import ProcessSchema
@@ -7,15 +10,34 @@ from eea.corpus.topics import pyldavis_visualization
 from eea.corpus.topics import termite_visualization
 from eea.corpus.topics import wordcloud_visualization
 from eea.corpus.utils import available_documents
-from eea.corpus.utils import default_column
 from eea.corpus.utils import document_name
+from eea.corpus.utils import extract_corpus_id
 from eea.corpus.utils import upload_location
 from pyramid.httpexceptions import HTTPFound
 from pyramid.renderers import render
 from pyramid.view import view_config
 from pyramid_deform import FormView
 import colander
+import logging
 import pyramid.httpexceptions as exc
+
+logger = logging.getLogger('eea.corpus')
+
+
+@view_config(context=Exception, renderer='templates/error.pt')
+def handle_exc(context, request):
+    logger.error(context)
+    return {'error': context}
+
+
+def _resolve(field, request, appstruct):
+    if field.name in request.params:
+        val = request.params[field.name]
+        if val is None:
+            val = colander.null
+        appstruct[field.name] = val
+    for child in field.children:
+        _resolve(child, request, appstruct)
 
 
 def get_appstruct(request, schema):
@@ -23,11 +45,7 @@ def get_appstruct(request, schema):
     """
     appstruct = {}
     for field in schema.children:
-        if field.name in request.params:
-            val = request.params[field.name]
-            if val is None:
-                val = colander.null
-            appstruct[field.name] = val
+        _resolve(field, request, appstruct)
     return appstruct
 
 
@@ -61,7 +79,7 @@ class UploadView(FormView):
 
 
 @view_config(
-    route_name="view_csv",
+    route_name="view_corpus",
     renderer="templates/topics.pt"
 )
 class TopicsView(FormView):
@@ -70,33 +88,34 @@ class TopicsView(FormView):
 
     vis = None
 
-    def corpus(self, text_column="text"):
+    def corpus(self):
         """ Return a corpus based on environment.
 
         It will try to return it from cache, otherwise load it from disk.
-        If corpus hasn't been extracted from the document, it will extract it
-        now.
+        If corpus hasn't been extracted from the document, it will redirect to
+        a corpus creation tool.
         """
 
         cache = self.request.corpus_cache
-        fname = document_name(self.request)
-        if (fname not in cache) or (text_column not in cache[fname]):
-            corpus = load_corpus(file_name=fname, text_column=text_column)
+        doc, corpus_name = extract_corpus_id(self.request)
+
+        if (doc not in cache) and (corpus_name not in cache.get(doc, [])):
+            corpus = load_corpus(file_name=doc, name=corpus_name)
 
             if corpus is None:
-                raise exc.HTTPFound("/process/%s/" % fname)
+                raise exc.HTTPFound("/process/%s/" % doc)
 
-            cache[fname] = {
-                text_column: corpus
+            cache[doc] = {
+                corpus_name: corpus
             }
 
-        return cache[fname][text_column]
+        return cache[doc][corpus_name]
 
     def metadata(self):
         """ Show metadata about context document
         """
-        fname = document_name(self.request)
-        corpus = self.corpus(text_column=default_column(fname, self.request))
+        # TODO: show info about processing and column
+        corpus = self.corpus()
         return {
             'docs': corpus.n_docs,
             'sentences': corpus.n_sents,
@@ -109,8 +128,8 @@ class TopicsView(FormView):
 
     def appstruct(self):
         appstruct = get_appstruct(self.request, self.schema)
-        fname = document_name(self.request)
-        appstruct['column'] = default_column(fname, self.request)
+        # fname = document_name(self.request)
+        # appstruct['column'] = default_column(fname, self.request)
 
         return appstruct
 
@@ -166,8 +185,8 @@ class ProcessView(FormView):
 
     def appstruct(self):
         appstruct = get_appstruct(self.request, self.schema)
-        fname = document_name(self.request)
-        appstruct['column'] = default_column(fname, self.request)
+        # fname = document_name(self.request)
+        # appstruct['column'] = default_column(fname, self.request)
         return appstruct
 
     def generate_corpus_success(self, appstruct):
@@ -179,4 +198,4 @@ class ProcessView(FormView):
         cache[self.document] = {
             text_column: corpus
         }
-        raise exc.HTTPFound('/view/%s/' % self.document)
+        raise exc.HTTPFound('/view/%s/%s' % (self.document, text_column))

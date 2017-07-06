@@ -1,4 +1,4 @@
-from eea.corpus.utils import upload_location, document_name, default_column
+from eea.corpus.utils import upload_location
 from colander import Int, Schema, SchemaNode, String, Float, Bool
 import deform
 import pandas as pd
@@ -27,8 +27,11 @@ def columns_widget(node, kw):
         f = pd.read_csv(path)
         choices = [('', '')] + [(k, k) for k in f.keys()]
 
-    file_name = document_name(req)
-    default = default_column(file_name, req)
+    # from eea.corpus.utils import document_name
+    # from eea.corpus.utils import default_column
+    # doc = document_name(req)
+    # default = default_column(file_name, req)
+    default = ''
     return deform.widget.SelectWidget(
         values=choices,
         default=default
@@ -54,12 +57,12 @@ class TopicExtractionSchema(Schema):
         default=100,
         title="Max number of documents to process"
     )
-    column = SchemaNode(
-        String(),
-        widget=columns_widget,
-        title='Text column in CSV file',
-        missing='',
-    )
+    # column = SchemaNode(
+    #     String(),
+    #     widget=columns_widget,
+    #     title='Text column in CSV file',
+    #     missing='',
+    # )
     min_df = SchemaNode(
         Float(),
         title="min_df",
@@ -95,24 +98,7 @@ class TopicExtractionSchema(Schema):
     )
 
 
-class ProcessSchema(Schema):
-    """ Process text schema
-    """
-
-    column = SchemaNode(
-        String(),
-        widget=columns_widget,
-        validator=colander.Length(min=1),
-        title='Text column in CSV file',
-        missing='',
-    )
-    normalize = SchemaNode(
-        Bool(),
-        default=True,
-        title="Enable text normalization",
-        label='Preprocess the text according to settings below.'
-        'All other settings are ignored.',
-    )
+class TextacyPipeline(Schema):
 
     fix_unicode = SchemaNode(
         Bool(),
@@ -182,3 +168,25 @@ class ProcessSchema(Schema):
         label="Replace all accented characters with unaccented versions; "
         "NB: if transliterate is True, this option is redundant."
     )
+
+
+class ProcessSchema(colander.MappingSchema):
+    """ Process text schema
+    """
+
+    column = SchemaNode(
+        String(),
+        widget=columns_widget,
+        validator=colander.Length(min=1),
+        title='Text column in CSV file',
+        missing='',
+    )
+    normalize = SchemaNode(
+        Bool(),
+        default=True,
+        title="Enable text normalization",
+        label='Preprocess the text according to settings below. '
+        'All other settings are ignored.',
+    )
+
+    textacy_pipeline = TextacyPipeline()

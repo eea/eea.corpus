@@ -1,10 +1,9 @@
 <div metal:use-macro="load: layout.pt">
 
-  <div metal:fill-slot="sidebar">
-  </div>
+  <div metal:fill-slot="sidebar"></div>
 
   <div metal:fill-slot="content">
-    <h1>Processing settings for ${view.document}</h1>
+    <h1>Create a new corpus for ${view.document}</h1>
     <div class="content" >
       <form tal:replace="structure form" ></form>
     </div>

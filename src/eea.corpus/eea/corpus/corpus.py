@@ -15,9 +15,9 @@ logger = logging.getLogger('eea.corpus')
 CORPUS_NAME = 'eeacorpus'
 
 
-def load_corpus(file_name, text_column='text', **kw):
+def load_corpus(file_name, name='text', **kw):
 
-    cpath = corpus_path(file_name, text_column)
+    cpath = corpus_path(file_name, name)
 
     if os.listdir(cpath):
         # if there are any files, assume the corpus is created
@@ -57,7 +57,7 @@ def _normalize_content_stream(content_stream, **kw):
 
     i = 0
     for content in content_stream:
-        print(i)
+        # print(i)
 
         if (i % 50) == 0:
             sys.stdout.write('.')   # show progress in terminal
@@ -97,6 +97,7 @@ def build_corpus(file_name, text_column='text', **kw):
     Returns a textacy.Corpus.
     """
 
+    # import pdb; pdb.set_trace()
     cpath = corpus_path(file_name, text_column)
     logger.info('Creating corpus for %s at %s', file_name, cpath)
 

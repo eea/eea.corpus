@@ -9,18 +9,26 @@
 
       <p class="lead">A ML based <span class="font-normal">topic modeling</span> tool.</p>
 
-      <ul class="list-group">
-        <li class="list-group-item" tal:repeat="doc documents">
-          <div class="btn-toolbar" role="group">
-            <a href="/view/${doc}/" class="btn">
-              ${doc}
+      <div tal:repeat="doc documents">
+
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <a href="/process/${doc.name}/" class="btn btn-primary pull-right">
+              Create a new corpus
             </a>
-            <a href="/process/${doc}/" class="btn pull-right">
-              <i class="glyphicon glyphicon-cog"></i>
-            </a>
+            <h5>${doc.title}</h5>
           </div>
-        </li>
-      </ul>
+          <div class="panel-body" tal:condition="doc.corpuses">
+            <ul class="list-group" >
+              <li class="list-group-item" tal:repeat="corpus doc.corpuses">
+                <div class="btn-toolbar" role="group">
+                  <a href="/view/${doc.name}/${corpus}" class="btn">${corpus}</a>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
     </div>
 
