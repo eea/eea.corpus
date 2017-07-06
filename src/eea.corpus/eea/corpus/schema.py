@@ -21,7 +21,7 @@ def columns_widget(node, kw):
     choices = []
     req = kw['request']
     md = req.matchdict or {}
-    name = md.get('name')
+    name = md.get('doc')
     if name:
         path = upload_location(name)        # TODO: move this to utils
         f = pd.read_csv(path)
