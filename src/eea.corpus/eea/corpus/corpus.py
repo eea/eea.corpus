@@ -57,8 +57,6 @@ def _normalize_content_stream(content_stream, **kw):
 
     i = 0
     for content in content_stream:
-        # print(i)
-
         if (i % 50) == 0:
             sys.stdout.write('.')   # show progress in terminal
 
@@ -81,8 +79,10 @@ def _normalize_content_stream(content_stream, **kw):
 
         yield content
 
+    print("\n")     # attempt to clear the sys.out
 
-def build_corpus(file_name, text_column='text', **kw):
+
+def build_corpus(corpus_name, file_name, text_column, **kw):
     """
     Load csv file from fpath. Each row is one document.
     It expects first column to be the Text / Body we want to analyse with
@@ -97,8 +97,7 @@ def build_corpus(file_name, text_column='text', **kw):
     Returns a textacy.Corpus.
     """
 
-    # import pdb; pdb.set_trace()
-    cpath = corpus_path(file_name, text_column)
+    cpath = corpus_path(file_name, corpus_name)
     logger.info('Creating corpus for %s at %s', file_name, cpath)
 
     # # read all eea documents from csv file

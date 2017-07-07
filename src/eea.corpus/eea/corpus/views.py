@@ -18,16 +18,23 @@ from pyramid.renderers import render
 from pyramid.view import view_config
 from pyramid_deform import FormView
 import colander
+import hashlib
 import logging
 import pyramid.httpexceptions as exc
+import sys
+import traceback as tb
 
 logger = logging.getLogger('eea.corpus')
 
 
 @view_config(context=Exception, renderer='templates/error.pt')
 def handle_exc(context, request):
-    logger.error(context)
-    return {'error': context}
+    _type, value, tr = sys.exc_info()
+    error = " ".join(tb.format_exception(_type, value, tr))
+    logger.error(error)
+    return {
+        'error': error
+    }
 
 
 def _resolve(field, request, appstruct):
@@ -134,14 +141,13 @@ class TopicsView(FormView):
         return appstruct
 
     def visualise(self, appstruct, method):
-        column = appstruct['column']
         max_df = appstruct['max_df']
         min_df = appstruct['min_df']
         mds = appstruct['mds']
         num_docs = appstruct['num_docs']
         topics = appstruct['topics']
 
-        corpus = self.corpus(text_column=column)
+        corpus = self.corpus()
         MAP = {
             'pyLDAvis': pyldavis_visualization,
             'termite': termite_visualization,
@@ -174,8 +180,6 @@ class ProcessView(FormView):
     schema = ProcessSchema()
     buttons = ('generate corpus', )
 
-    vis = None
-
     @property
     def document(self):
         return document_name(self.request)
@@ -189,13 +193,26 @@ class ProcessView(FormView):
         # appstruct['column'] = default_column(fname, self.request)
         return appstruct
 
+    def generate_corpus_name(self, appstruct):
+        m = hashlib.sha224()
+        for kv in sorted(appstruct.items()):
+            m.update(str(kv).encode('ascii'))
+        return m.hexdigest()
+
     def generate_corpus_success(self, appstruct):
         print(appstruct)
         text_column = appstruct.pop('column')
-        corpus = build_corpus(self.document, text_column=text_column,
+
+        s = appstruct.copy()
+        s['doc'] = self.document
+        s['text_column'] = text_column
+
+        corpus_name = self.generate_corpus_name(s)
+
+        corpus = build_corpus(corpus_name, self.document, text_column,
                               **appstruct)
         cache = self.request.corpus_cache
         cache[self.document] = {
-            text_column: corpus
+            corpus_name: corpus
         }
         raise exc.HTTPFound('/view/%s/%s' % (self.document, text_column))
