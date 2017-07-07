@@ -15,7 +15,7 @@ logger = logging.getLogger('eea.corpus')
 CORPUS_NAME = 'eeacorpus'
 
 
-def load_corpus(file_name, name='text', **kw):
+def load_corpus(file_name, name, **kw):
 
     cpath = corpus_path(file_name, name)
 

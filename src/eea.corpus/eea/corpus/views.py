@@ -215,4 +215,4 @@ class ProcessView(FormView):
         cache[self.document] = {
             corpus_name: corpus
         }
-        raise exc.HTTPFound('/view/%s/%s' % (self.document, text_column))
+        raise exc.HTTPFound('/view/%s/%s' % (self.document, corpus_name))
