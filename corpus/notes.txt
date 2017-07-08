@@ -77,7 +77,15 @@ visualisation.
 http://textacy.readthedocs.io/en/latest/api_reference.html?highlight=depech#textacy.data.load_depechemood 
 and cluster documents accordingly and / or visualise the stats.
 
-20. FEATURE: add scattertext visualisation https://github.com/JasonKessler/scattertext to compare one topic versus the other
-topics OR compare two corpora with eachother.
+20. FEATURE: add scattertext visualisation https://github.com/JasonKessler/scattertext to compare one topic
+versus the other topics OR compare two corpora with eachother.
 
-21: BUG: if you upload a csv that does not have default text column and uses a column with "Subject", than the preprocessing is not working.
+21: BUG: if you upload a csv that does not have default text column and uses a column with "Subject", 
+than the preprocessing is not working.
+
+22. FEATURE. more data source inputs. Beside the current possibility to upload a CSV file direclty, 
+we could add:
+
+ - Elasticserch backend. the possibility to connect to existing Elasticsearch index (this would allow to get the data
+directly from our eea main elasticsearch)
+ - data from a URL. this would allow to fetch data lively from a URL (which returns a csv/json). For example we would create SPARQL queries on a plone site and we can just use the URL to CSV/JSON in eea.corpus. This way we don't need to add a sparql client in eea.corpus if we want to get data direcly from our SDS. We have quite many sparqls tables available, see https://www.eea.europa.eu/code/api and https://www.eea.europa.eu/data-and-maps/daviz/sds.
