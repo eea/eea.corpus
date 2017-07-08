@@ -87,5 +87,10 @@ than the preprocessing is not working.
 we could add:
 
  - Elasticserch backend. the possibility to connect to existing Elasticsearch index (this would allow to get the data
-directly from our eea main elasticsearch)
- - data from a URL. this would allow to fetch data lively from a URL (which returns a csv/json). For example we would create SPARQL queries on a plone site and we can just use the URL to CSV/JSON in eea.corpus. This way we don't need to add a sparql client in eea.corpus if we want to get data direcly from our SDS. We have quite many sparqls tables available, see https://www.eea.europa.eu/code/api and https://www.eea.europa.eu/data-and-maps/daviz/sds.
+   directly from our eea main elasticsearch)
+ - data from a URL. this would allow to fetch data lively from a URL (which returns a csv/json). 
+   For example we would create SPARQL queries on a plone site and we can just use the URL to CSV/JSON in eea.corpus. 
+   This way we don't need to add a sparql client in eea.corpus if we want to get data direcly from our SDS. We have quite
+   many sparqls tables available, see https://www.eea.europa.eu/code/api and https://www.eea.europa.eu/data-and-maps/daviz/sds.
+
+23. provide a way for analysing only via Information Extraction pipeline, for example extract only NER-entities, phrases or n-grams for further processing into corpus visualisations.
