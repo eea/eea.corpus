@@ -28,6 +28,7 @@ corpus_require = [
     'bs4',
     'pyldavis',
     'click',
+    'wordcloud',
 ]
 
 
