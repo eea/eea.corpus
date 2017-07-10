@@ -1,6 +1,7 @@
 """ Pyramid views. Main UI for the eea.corpus
 """
 
+from eea.corpus.async import queue
 from eea.corpus.corpus import build_corpus
 from eea.corpus.corpus import load_corpus
 from eea.corpus.schema import ProcessSchema
@@ -209,10 +210,21 @@ class ProcessView(FormView):
 
         corpus_name = self.generate_corpus_name(s)
 
-        corpus = build_corpus(corpus_name, self.document, text_column,
-                              **appstruct)
-        cache = self.request.corpus_cache
-        cache[self.document] = {
-            corpus_name: corpus
-        }
-        raise exc.HTTPFound('/view/%s/%s' % (self.document, corpus_name))
+        job = queue.enqueue(build_corpus, corpus_name, self.document,
+                            text_column, **appstruct)
+        raise exc.HTTPFound('/view/%s/%s/job/%s' % (self.document,
+                                                    corpus_name, job.id))
+
+        # import pdb; pdb.set_trace()
+        # cache = self.request.corpus_cache
+        # cache[self.document] = {
+        #     corpus_name: corpus
+        # }
+        # raise exc.HTTPFound('/view/%s/%s' % (self.document, corpus_name))
+
+
+@view_config(route_name='view_job', renderer='templates/job.pt')
+def view_job(request):
+    jobid = request.matchdict.get('job')
+    job = queue.fetch_job(jobid)
+    return {'job': job}

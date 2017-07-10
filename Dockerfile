@@ -45,7 +45,9 @@ RUN mkdir /corpus
 COPY src /src
 
 # RUN pip install -r /src/eea.corpus/requirements.txt
+
 RUN cd /src/eea.corpus \
+      && rm -rf eea.corpus.egg-info* \
       && python setup.py develop
 
 WORKDIR /src/eea.corpus

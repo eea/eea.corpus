@@ -4,3 +4,5 @@ services:
     image: eeacms/corpus:pyramid_service
     ports:
       - "8181:6543"
+  redis:
+    image: redis

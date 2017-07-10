@@ -1,6 +1,8 @@
 from bs4 import BeautifulSoup
+from eea.corpus.async import queue
 from eea.corpus.utils import corpus_path
 from eea.corpus.utils import upload_location
+from rq.decorators import job
 from textacy.preprocess import preprocess_text
 import inspect
 import logging
@@ -82,6 +84,7 @@ def _normalize_content_stream(content_stream, **kw):
     print("\n")     # attempt to clear the sys.out
 
 
+@job(queue=queue)
 def build_corpus(corpus_name, file_name, text_column, **kw):
     """
     Load csv file from fpath. Each row is one document.

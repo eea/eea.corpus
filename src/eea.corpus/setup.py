@@ -29,6 +29,7 @@ corpus_require = [
     'pyldavis',
     'click',
     'wordcloud',
+    'rq',
 ]
 
 
@@ -56,7 +57,10 @@ setup(
     install_requires=requires+corpus_require,
     entry_points={
         'paste.app_factory': [
-            'main = eea.corpus:main',
+            'main=eea.corpus:main',
         ],
+        'console_scripts': [
+            'worker=eea.corpus.async:worker',
+        ]
     },
 )

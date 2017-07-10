@@ -34,6 +34,7 @@ def main(global_config, **settings):
     config.add_route('upload_csv', '/upload')
     config.add_route('view_corpus', '/view/{doc}/{corpus}')
     config.add_route('process_csv', '/process/{doc}/')
+    config.add_route('view_job', '/view/{doc}/{corpus}/job/{job}')
 
     config.add_request_method(corpus_cache, reify=True)
 
