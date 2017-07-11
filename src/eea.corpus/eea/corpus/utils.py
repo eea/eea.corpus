@@ -7,6 +7,7 @@
 
 from __future__ import unicode_literals
 import os
+import shutil
 
 
 # from textacy.fileio import split_record_fields
@@ -33,6 +34,11 @@ def corpus_path(file_name, text_column):
         os.makedirs(cpath)
 
     return cpath
+
+
+def delete_corpus(file_name, corpus_name):
+    cp = corpus_path(file_name, corpus_name)
+    shutil.rmtree(cp)
 
 
 def upload_location(file_name):

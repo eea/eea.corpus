@@ -23,6 +23,12 @@
               <li class="list-group-item" tal:repeat="corpus doc.corpuses">
                 <div class="btn-toolbar" role="group">
                   <a href="/view/${doc.name}/${corpus}" class="btn">${corpus}</a>
+                  <form method="POST" class="pull-right"
+                    action="/delete/${doc.name}/${corpus}">
+                    <button class="btn btn-secondary" >
+                      <span class="glyphicon glyphicon-trash"></span>
+                    </button>
+                  </form>
                 </div>
               </li>
             </ul>

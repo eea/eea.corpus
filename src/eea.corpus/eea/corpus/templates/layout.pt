@@ -25,6 +25,11 @@
     <div class="starter-template">
       <div class="container-bs">
         <div class="row">
+          <div class="col-md-12" tal:define="messages request.session.pop_flash()">
+            <ul tal:condition="messages">
+              <li tal:repeat="msg messages" class="well" >${msg}</li>
+            </ul>
+          </div>
           <!-- <div class="col&#45;md&#45;2"> -->
           <!--   <!&#45;&#45; <img class="logo img&#38;#45;responsive" src="${request.static_url('eea.corpus:static/pyramid.png')}" alt="pyramid web framework"> &#45;&#45;> -->
           <!-- </div> -->

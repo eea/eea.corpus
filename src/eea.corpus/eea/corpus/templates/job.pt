@@ -4,33 +4,38 @@
   </div>
 
   <div metal:fill-slot="content">
-    <div class="content" >
-      <h4>Job id ${job.id}</h4>
-      <p class="discreet">
-      Created: ${job.created_at}<br/>
-      </p>
-      <p>
+    <div class="content">
+      <div tal:condition="job">
+        <h4>Job id ${job.id}</h4>
+        <p class="discreet">
+        Created: ${job.created_at}<br/>
+        </p>
+        <p>
         <strong>Status</strong>
         ${job._status}
-      </p>
+        </p>
 
-      <h5>Arguments</h5>
-      <pre>
-      <code>
-      ${job.kwargs}
-      </code>
-      </pre>
+        <!-- <h5>Arguments</h5> -->
+        <!-- <pre> -->
+      <!-- <code> -->
+      <!-- ${job.kwargs} -->
+      <!-- </code> -->
+      <!-- </pre> -->
+        <!--  -->
+        <!-- <h5>Execution info</h5> -->
+        <!-- <pre> -->
+      <!-- <code> -->
+      <!-- ${job.exc_info} -->
+      <!-- </code> -->
+      <!-- </pre> -->
 
-      <h5>Execution info</h5>
-      <pre>
-      <code>
-      ${job.exc_info}
-      </code>
-      </pre>
-      <p>
-      Please reload page to view updated async job status
-      </p>
-
+        <p>
+        Please reload page to view updated async job status
+        </p>
+      </div>
+      <div tal:condition="not job">
+        Job not found
+      </div>
     </div>
   </div>
 </div>

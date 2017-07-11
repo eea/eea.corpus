@@ -11,6 +11,7 @@ from eea.corpus.topics import pyldavis_visualization
 from eea.corpus.topics import termite_visualization
 from eea.corpus.topics import wordcloud_visualization
 from eea.corpus.utils import available_documents
+from eea.corpus.utils import delete_corpus
 from eea.corpus.utils import document_name
 from eea.corpus.utils import extract_corpus_id
 from eea.corpus.utils import upload_location
@@ -228,3 +229,12 @@ def view_job(request):
     jobid = request.matchdict.get('job')
     job = queue.fetch_job(jobid)
     return {'job': job}
+
+
+@view_config(route_name='delete_corpus')
+def delete_corpus_view(request):
+    doc = request.matchdict['doc']
+    corpus = request.matchdict['corpus']
+    delete_corpus(doc, corpus)
+    request.session.flash("Corpus deleted")
+    raise exc.HTTPFound('/')
