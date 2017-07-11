@@ -27,6 +27,9 @@
       ${job.exc_info}
       </code>
       </pre>
+      <p>
+      Please reload page to view updated async job status
+      </p>
 
     </div>
   </div>

@@ -2,27 +2,25 @@ version: "2"
 services:
   shell:
       build: .
-      volumes:
-        # - ./corpus:/corpus
-        - ./src:/src
       command: sh -c "tail -f /dev/null"
       ports:
         - "6543:6543"
       environment:
         - REDIS_URL=redis://redis:6379/0
       volumes:
+        - ./src:/src
+        # - ./corpus:/corpus
         - corpus-data:/corpus
   redis:
     image: redis
   worker:
       build: .
-      volumes:
-        # - ./corpus:/corpus
-        - ./src:/src
       command: worker
       environment:
         - REDIS_URL=redis://redis:6379/0
       volumes:
+        # - ./corpus:/corpus
+        - ./src:/src
         - corpus-data:/corpus
 
 volumes:
