@@ -51,9 +51,9 @@ def _normalize_content_stream(content_stream, **kw):
         str: normalized plain text for the next document.
     """
 
-    textacy_preprocess_args = inspect.getargspec(preprocess_text)
+    textacy_preprocess_args = inspect.getargspec(preprocess_text).args
     t_args = {}
-    for k, v in kw.items():
+    for k, v in kw.get('textacy_pipeline', {}).items():
         if k in textacy_preprocess_args:
             t_args[k] = v
 
@@ -69,6 +69,7 @@ def _normalize_content_stream(content_stream, **kw):
         try:
             soup = BeautifulSoup(content, 'html.parser')
             content = soup.get_text()
+            # print("preprocessing using %r" % t_args)
             content = preprocess_text(content, **t_args)
         except Exception:
             logger.warning("Got an error in extracting content: %r", content)
@@ -121,5 +122,3 @@ def build_corpus(corpus_name, file_name, text_column, **kw):
 
     corpus = textacy.Corpus('en', texts=content_stream)
     corpus.save(cpath, name=CORPUS_NAME)
-
-    return corpus
