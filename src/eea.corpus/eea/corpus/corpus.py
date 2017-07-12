@@ -1,12 +1,14 @@
 from bs4 import BeautifulSoup
 from eea.corpus.async import queue
-from eea.corpus.utils import corpus_path
+from eea.corpus.utils import corpus_base_path
+from eea.corpus.utils import metadata
 from eea.corpus.utils import upload_location
 from rq.decorators import job
 from textacy.preprocess import preprocess_text
 import inspect
+import json
 import logging
-import os
+import os.path
 import pandas as pd
 import phrasemachine
 import sys
@@ -14,19 +16,6 @@ import textacy
 
 
 logger = logging.getLogger('eea.corpus')
-CORPUS_NAME = 'eeacorpus'
-
-
-def load_corpus(file_name, name, **kw):
-
-    cpath = corpus_path(file_name, name)
-
-    if os.listdir(cpath):
-        # if there are any files, assume the corpus is created
-        print("Saved corpus exists, loading", cpath)
-        return textacy.Corpus.load(cpath, name=CORPUS_NAME)
-
-    return None
 
 
 def _tokenize_phrases(content):
@@ -85,8 +74,27 @@ def _normalize_content_stream(content_stream, **kw):
     print("\n")     # attempt to clear the sys.out
 
 
+def save_corpus_metadata(corpus, file_name, corpus_id, text_column, **kw):
+    cpath = corpus_base_path(file_name)      # corpus_id
+    meta_name = "{0}_eea.json".format(corpus_id)
+    meta_path = os.path.join(cpath, meta_name)
+
+    title = kw.pop('title')
+    description = kw.pop('description', '')
+
+    info = {
+        'title': title,
+        'description': description,
+        'metadata': metadata(corpus),
+        'text_column': text_column,
+        'kw': kw,
+    }
+    with open(meta_path, 'w') as f:
+        json.dump(info, f)
+
+
 @job(queue=queue)
-def build_corpus(corpus_name, file_name, text_column, **kw):
+def build_corpus(corpus_id, file_name, text_column, **kw):
     """
     Load csv file from fpath. Each row is one document.
     It expects first column to be the Text / Body we want to analyse with
@@ -101,7 +109,7 @@ def build_corpus(corpus_name, file_name, text_column, **kw):
     Returns a textacy.Corpus.
     """
 
-    cpath = corpus_path(file_name, corpus_name)
+    cpath = corpus_base_path(file_name)      # corpus_id
     logger.info('Creating corpus for %s at %s', file_name, cpath)
 
     # # read all eea documents from csv file
@@ -121,4 +129,5 @@ def build_corpus(corpus_name, file_name, text_column, **kw):
         content_stream = _normalize_content_stream(content_stream, **kw)
 
     corpus = textacy.Corpus('en', texts=content_stream)
-    corpus.save(cpath, name=CORPUS_NAME)
+    corpus.save(cpath, name=corpus_id)
+    save_corpus_metadata(corpus, file_name, corpus_id, text_column, **kw)

@@ -14,6 +14,7 @@
         <div class="panel panel-default">
           <div class="panel-heading">
             <a href="/process/${doc.name}/" class="btn btn-primary pull-right">
+              <span class="glyphicon glyphicon-cog"></span>
               Create a new corpus
             </a>
             <h5>${doc.title}</h5>
@@ -22,9 +23,13 @@
             <ul class="list-group" >
               <li class="list-group-item" tal:repeat="corpus doc.corpuses">
                 <div class="btn-toolbar" role="group">
-                  <a href="/view/${doc.name}/${corpus}" class="btn">${corpus}</a>
+                  <a
+                                         href="/view/${doc.name}/${corpus[0]}"
+                                         class="btn">
+                    ${corpus[1]['title']}
+                  </a>
                   <form method="POST" class="pull-right"
-                    action="/delete/${doc.name}/${corpus}">
+                    action="/delete/${doc.name}/${corpus[0]}">
                     <button class="btn btn-secondary" >
                       <span class="glyphicon glyphicon-trash"></span>
                     </button>

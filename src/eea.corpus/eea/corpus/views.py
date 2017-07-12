@@ -3,8 +3,7 @@
 
 from eea.corpus.async import queue
 from eea.corpus.corpus import build_corpus
-from eea.corpus.corpus import load_corpus
-from eea.corpus.schema import ProcessSchema
+from eea.corpus.schema import CreateCorpusSchema
 from eea.corpus.schema import TopicExtractionSchema
 from eea.corpus.schema import UploadSchema
 from eea.corpus.topics import pyldavis_visualization
@@ -14,6 +13,8 @@ from eea.corpus.utils import available_documents
 from eea.corpus.utils import delete_corpus
 from eea.corpus.utils import document_name
 from eea.corpus.utils import extract_corpus_id
+from eea.corpus.utils import get_corpus
+from eea.corpus.utils import metadata
 from eea.corpus.utils import upload_location
 from pyramid.httpexceptions import HTTPFound
 from pyramid.renderers import render
@@ -27,16 +28,7 @@ import sys
 import traceback as tb
 
 logger = logging.getLogger('eea.corpus')
-
-
-@view_config(context=Exception, renderer='templates/error.pt')
-def handle_exc(context, request):
-    _type, value, tr = sys.exc_info()
-    error = " ".join(tb.format_exception(_type, value, tr))
-    logger.error(error)
-    return {
-        'error': error
-    }
+# HTTPFound("/process/%s/" % doc)
 
 
 def _resolve(field, request, appstruct):
@@ -60,7 +52,7 @@ def get_appstruct(request, schema):
 
 @view_config(route_name='home', renderer='templates/home.pt')
 def home(request):
-    documents = available_documents()
+    documents = available_documents(request)
     return {
         'project': 'EEA Corpus Server',
         'documents': documents
@@ -105,32 +97,16 @@ class TopicsView(FormView):
         a corpus creation tool.
         """
 
-        cache = self.request.corpus_cache
-        doc, corpus_name = extract_corpus_id(self.request)
-
-        if (doc not in cache) and (corpus_name not in cache.get(doc, [])):
-            corpus = load_corpus(file_name=doc, name=corpus_name)
-
-            if corpus is None:
-                raise exc.HTTPFound("/process/%s/" % doc)
-
-            cache[doc] = {
-                corpus_name: corpus
-            }
-
-        return cache[doc][corpus_name]
+        corpus = get_corpus(self.request)
+        if corpus is None:
+            raise exc.HTTPNotFound()
+        return corpus
 
     def metadata(self):
         """ Show metadata about context document
         """
         # TODO: show info about processing and column
-        corpus = self.corpus()
-        return {
-            'docs': corpus.n_docs,
-            'sentences': corpus.n_sents,
-            'tokens': corpus.n_tokens,
-            'lang': corpus.spacy_lang.lang,
-        }
+        return metadata(self.corpus())
 
     def before(self, form):
         form.appstruct = self.appstruct()
@@ -178,8 +154,8 @@ class TopicsView(FormView):
     route_name="process_csv",
     renderer="templates/process.pt"
 )
-class ProcessView(FormView):
-    schema = ProcessSchema()
+class CreateCorpusView(FormView):
+    schema = CreateCorpusSchema()
     buttons = ('generate corpus', )
 
     @property
@@ -195,7 +171,7 @@ class ProcessView(FormView):
         # appstruct['column'] = default_column(fname, self.request)
         return appstruct
 
-    def generate_corpus_name(self, appstruct):
+    def generate_corpus_id(self, appstruct):
         m = hashlib.sha224()
         for kv in sorted(appstruct.items()):
             m.update(str(kv).encode('ascii'))
@@ -203,18 +179,20 @@ class ProcessView(FormView):
 
     def generate_corpus_success(self, appstruct):
         print(appstruct)
-        text_column = appstruct.pop('column')
 
         s = appstruct.copy()
         s['doc'] = self.document
-        s['text_column'] = text_column
+        corpus_id = self.generate_corpus_id(s)
 
-        corpus_name = self.generate_corpus_name(s)
+        job = queue.enqueue(build_corpus,
+                            timeout='1h',
+                            args=(corpus_id,
+                                  self.document,
+                                  appstruct['column']),
+                            kwargs=appstruct)
 
-        job = queue.enqueue(build_corpus, corpus_name, self.document,
-                            text_column, **appstruct)
-        raise exc.HTTPFound('/view/%s/%s/job/%s' % (self.document,
-                                                    corpus_name, job.id))
+        raise exc.HTTPFound('/view/%s/%s/job/%s' %
+                            (self.document, corpus_id, job.id))
 
         # import pdb; pdb.set_trace()
         # cache = self.request.corpus_cache
@@ -233,8 +211,17 @@ def view_job(request):
 
 @view_config(route_name='delete_corpus')
 def delete_corpus_view(request):
-    doc = request.matchdict['doc']
-    corpus = request.matchdict['corpus']
+    doc, corpus = extract_corpus_id(request)
     delete_corpus(doc, corpus)
     request.session.flash("Corpus deleted")
     raise exc.HTTPFound('/')
+
+
+@view_config(context=Exception, renderer='templates/error.pt')
+def handle_exc(context, request):
+    _type, value, tr = sys.exc_info()
+    error = " ".join(tb.format_exception(_type, value, tr))
+    logger.error(error)
+    return {
+        'error': error
+    }

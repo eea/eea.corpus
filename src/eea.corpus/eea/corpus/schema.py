@@ -170,16 +170,28 @@ class TextacyPipeline(Schema):
     )
 
 
-class ProcessSchema(colander.MappingSchema):
+class CreateCorpusSchema(colander.MappingSchema):
     """ Process text schema
     """
+
+    title = SchemaNode(
+        String(),
+        validator=colander.Length(min=1),
+        title='Corpus title.',
+        description='Letters, numbers and spaces',
+    )
+    description = SchemaNode(
+        String(),
+        widget=deform.widget.TextAreaWidget(),
+        title='Description',
+        missing='',
+    )
 
     column = SchemaNode(
         String(),
         widget=columns_widget,
         validator=colander.Length(min=1),
         title='Text column in CSV file',
-        missing='',
     )
     normalize = SchemaNode(
         Bool(),

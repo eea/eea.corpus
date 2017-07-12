@@ -1,47 +1,60 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-# https://github.com/chartbeat-labs/textacy
-# make sure you have downloaded the language model
-# $ python -m spacy.en.download all
-
 from __future__ import unicode_literals
+from collections import defaultdict
+import json
+import logging
 import os
-import shutil
-
-
+import textacy
 # from textacy.fileio import split_record_fields
 
+
+logger = logging.getLogger('eea.corpus')
+
+
 CORPUS_STORAGE = "/corpus"
+
+
+def load_corpus(file_name, corpus_id, **kw):
+    """ Loads a textacy corpus from disk.
+
+    Requires the document name and the corpus id
+    """
+
+    cpath = corpus_base_path(file_name)
+
+    if os.listdir(cpath):
+        assert os.path.exists(corpus_metadata_path(file_name, corpus_id))
+        # if there are any files, assume the corpus is created
+        # TODO: check that the corpus is really saved
+        print("Saved corpus exists, loading", cpath)
+        return textacy.Corpus.load(cpath, name=corpus_id)
+
+    return None
 
 
 def corpus_base_path(file_name):
     """ Returns the /corpus/var/<filename> folder for an uploaded file
     """
+
     varpath = os.path.join(CORPUS_STORAGE, 'var')
     base = os.path.join(varpath, file_name)
+    if not os.path.exists(base):
+        os.makedirs(base)
     return base
 
 
-def corpus_path(file_name, text_column):
-    """ Returns the directory for a corpus based on file name and column
-    """
-
-    base = corpus_base_path(file_name)
-    cpath = os.path.join(base, text_column)
-
-    if not os.path.exists(cpath):
-        os.makedirs(cpath)
-
-    return cpath
-
-
-def delete_corpus(file_name, corpus_name):
-    cp = corpus_path(file_name, corpus_name)
-    shutil.rmtree(cp)
+def delete_corpus(file_name, corpus_id):
+    assert len(corpus_id) > 10
+    cp = corpus_base_path(file_name)
+    for f in os.listdir(cp):
+        if f.startswith(corpus_id):
+            fp = os.path.join(cp, f)
+            os.unlink(fp)
 
 
 def upload_location(file_name):
+    """ Returns the path where an upload file would be saved, in the storage
+    """
+
     assert not file_name.startswith('.')
     return os.path.join(CORPUS_STORAGE, file_name)
 
@@ -55,13 +68,73 @@ def available_corpus(file_name):
 
     The corpuses corespond to a column in the file.
     """
+
     base = corpus_base_path(file_name)
-    return os.path.exists(base) and os.listdir(base) or []
+    if not os.path.exists(base):
+        return []
+
+    res = []
+    files = defaultdict(list)
+    for fn in os.listdir(base):
+        if '_' not in fn:
+            continue
+        base, spec = fn.split('_', 1)
+        files[base].append(spec)
+
+        for corpus, cfs in files.items():
+            if len(cfs) != 4:
+                logger.warning("Not a valid corpus: %s (%s)",
+                               file_name, corpus)
+                continue
+            res.append(corpus)
+
+    return res
 
 
-def available_documents():
-    """ Returns a list of available files in the big corpus storage
+def get_corpus(request, doc=None, corpus_id=None):
+    cache = request.corpus_cache
+    if not (doc and corpus_id):
+        doc, corpus_id = extract_corpus_id(request)
+
+    if (doc not in cache) and (corpus_id not in cache.get(doc, [])):
+        corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
+
+        if corpus is None:
+            return None
+
+        cache[doc] = {
+            corpus_id: corpus
+        }
+
+    return cache[doc][corpus_id]
+
+
+def corpus_metadata_path(file_name, corpus_id):
+    """ Returns the zzz_eea.json file path for a given doc/corpus
     """
+    cpath = corpus_base_path(file_name)      # corpus_id
+    meta_name = "{0}_eea.json".format(corpus_id)
+    meta_path = os.path.join(cpath, meta_name)
+    return meta_path
+
+
+def load_corpus_metadata(file_name, corpus_id):
+    """ Returns the EEA specific metadata saved for a doc/corpus
+    """
+    meta_path = corpus_metadata_path(file_name, corpus_id)
+
+    res = None
+
+    with open(meta_path) as f:
+        res = json.load(f)
+
+    return res
+
+
+def available_documents(request):
+    """ Returns a list of available documents (ex: csv files) in the storage
+    """
+
     res = []
 
     docs = [f for f in os.listdir(CORPUS_STORAGE) if f.endswith('.csv')]
@@ -69,9 +142,19 @@ def available_documents():
         cpath = corpus_base_path(name)
         corpuses = []
         if os.path.exists(cpath):
-            corpuses = [c
-                        for c in os.listdir(cpath)
-                        if os.listdir(os.path.join(cpath, c))]
+            files = defaultdict(list)
+            for fn in os.listdir(cpath):
+                if '_' not in fn:
+                    continue
+                base, spec = fn.split('_', 1)
+                files[base].append(spec)
+
+            for corpus, cfs in files.items():
+                if len(cfs) != 4:
+                    logger.warning("Not a valid corpus: %s (%s)", name, corpus)
+                    continue
+                meta = load_corpus_metadata(name, corpus)
+                corpuses.append((corpus, meta))
         d = {
             'title': name,
             'name': name,
@@ -80,6 +163,15 @@ def available_documents():
         res.append(d)
 
     return res
+
+
+def metadata(corpus):
+    return {
+        'docs': corpus.n_docs,
+        'sentences': corpus.n_sents,
+        'tokens': corpus.n_tokens,
+        'lang': corpus.spacy_lang.lang,
+    }
 
 
 def extract_corpus_id(request):
@@ -109,6 +201,17 @@ def document_name(request):
     return doc
 
 
+# def corpus_path(file_name, text_column):
+#     """ Returns the directory for a corpus based on file name and column
+#     """
+#
+#     base = corpus_base_path(file_name)
+#     cpath = os.path.join(base, text_column)
+#
+#     if not os.path.exists(cpath):
+#         os.makedirs(cpath)
+#
+#     return cpath
 # def default_column(file_name, request):
 #     """ Identify the "default" column.
 #

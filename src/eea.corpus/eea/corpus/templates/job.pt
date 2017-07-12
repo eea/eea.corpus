@@ -15,22 +15,20 @@
         ${job._status}
         </p>
 
-        <!-- <h5>Arguments</h5> -->
-        <!-- <pre> -->
-      <!-- <code> -->
-      <!-- ${job.kwargs} -->
-      <!-- </code> -->
-      <!-- </pre> -->
-        <!--  -->
-        <!-- <h5>Execution info</h5> -->
-        <!-- <pre> -->
-      <!-- <code> -->
-      <!-- ${job.exc_info} -->
-      <!-- </code> -->
-      <!-- </pre> -->
+        <div tal:condition="job.exc_info">
+          <h5>Execution info</h5>
+          <pre>
+<code>
+${job.exc_info}
+</code>
+          </pre>
+        </div>
 
-        <p>
+        <p tal:condition="job._status not in ['finished', 'failed']">
         Please reload page to view updated async job status
+        </p>
+        <p tal:condition="job._status == 'finished'">
+        <a href="/view/${request.matchdict.doc}/${request.matchdict.corpus}">View corpus</a>
         </p>
       </div>
       <div tal:condition="not job">
