@@ -25,7 +25,7 @@ def load_corpus(file_name, corpus_id, **kw):
         assert os.path.exists(corpus_metadata_path(file_name, corpus_id))
         # if there are any files, assume the corpus is created
         # TODO: check that the corpus is really saved
-        print("Saved corpus exists, loading", cpath)
+        print("Saved corpus exists, loading", cpath, corpus_id)
         return textacy.Corpus.load(cpath, name=corpus_id)
 
     return None
@@ -106,7 +106,10 @@ def get_corpus(request, doc=None, corpus_id=None):
             corpus_id: corpus
         }
 
-    return cache[doc][corpus_id]
+    try:
+        return cache[doc][corpus_id]
+    except:
+        import pdb; pdb.set_trace()
 
 
 def corpus_metadata_path(file_name, corpus_id):
