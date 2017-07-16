@@ -2,6 +2,7 @@
   <div metal:fill-slot="content">
 
     <div class="content">
+      ${view.schema.children}
       <form tal:replace="structure form" />
     </div>
 
