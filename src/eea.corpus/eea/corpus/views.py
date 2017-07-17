@@ -283,12 +283,48 @@ class CreateCorpusView(FormView):
                                 renderer=accordion_renderer)
                     pos = v.pop('schema_position')
                     schemas[pos] = s
-        for k in sorted(schemas.keys()):
-            print('adding schema', schemas[k])
-            schema.add(schemas[k])
+
+        # Handle subschemas clicked buttons: perform apropriate operations
+        schemas = [schemas[i] for i in sorted(schemas.keys())]
+        schemas = self._apply_schema_edits(schemas, data)
+        for s in schemas:
+            schema.add(s)
 
         self.form = Form(schema, **kwargs)
         return self.form
+
+    def _apply_schema_edits(self, schemas, data):
+        # assume the schemas have a contigous range of schema_position values
+        # assume schemas are properly ordered
+
+        for i, s in enumerate(schemas):
+
+            if "remove_%s_success" % s.name in data:
+                del schemas[i]
+                for z, s in enumerate(schemas):
+                    f = s['schema_position']
+                    f.default = f.missing = z
+                return schemas
+
+            if "move_up_%s_success" % s.name in data:
+                if i == 0:
+                    return schemas      # can't move a schema that's first
+                # switch position between list members
+                pos = max(i-1, 0)
+                S = schemas
+                schemas = S[:i] + [S[i], S[pos]] + S[i+2:]
+                return schemas
+
+            if "move_down_%s_success" % s.name in data:
+                if i == len(schemas):
+                    return schemas      # can't move a schema that's last
+                # switch position between list members
+                pos = max(i+1, len(schemas))
+                S = schemas
+                schemas = S[:i] + [S[pos], S[i]] + S[i+2:]
+                return schemas
+
+        return schemas
 
     def appstruct(self):
         # This is only called on success, to populate the success form
@@ -357,110 +393,6 @@ def handle_exc(context, request):
     return {
         'error': error
     }
-
-
-# class DemoSchema(c.Schema):
-#     """ Process text schema
-#     """
-#
-#     title = c.SchemaNode(
-#         c.String(),
-#         validator=c.Length(min=1),
-#         title='Corpus title.',
-#         description='Letters, numbers and spaces',
-#     )
-#
-#
-# @view_config(
-#     route_name="demo",
-#     renderer="templates/simpleform.pt"
-# )
-# class Demo(FormView):
-#
-#     schema = DemoSchema()
-#
-#     # def __init__(self, request):
-#     #     self.schema = DemoSchema()
-#     #     return FormView.__init__(self, request)
-#
-#     def _success_handler(self, appstruct):
-#         print("Success generic", appstruct)
-#
-#     def __getattr__(self, name):
-#         if name.endswith("_success") and name != 'generate_corpus_success':
-#             return self._success_handler
-#
-#         return self.__getattribute__(name)
-#
-#     @property
-#     def buttons(self):
-#         _b = [
-#             Button('add_%s' % x.name, 'Add %s pipeline' % x.title)
-#             for x in pipeline_registry.values()
-#         ]
-#         return _b + [
-#             Button('generate_corpus', 'Generate Corpus'),
-#         ]
-#
-#     def _repopulate_schema(self, schema):
-#         data = parse(self.request.POST.items())
-#         print('Repopulate schema', data)
-#
-#         # recreate existing schemas.
-#         for k, v in data.items():
-#             if isinstance(v, dict):   # might be a schema cstruct
-#                 if v.get('schema_type'):        # yeap, a schema
-#                     p = pipeline_registry[v['schema_type']]
-#                     s = p.klass(name=k, title=p.title)
-#                     schema.add(s)
-#
-#     def form_class(self, schema, **kwargs):
-#         self._repopulate_schema(schema)
-#         self.form = Form(schema, **kwargs)
-#         return self.form
-#
-#     def appstruct(self):
-#         # This is only called on success, to populate the success form
-#
-#         pstruct = parse(self.request.POST.items())
-#         if pstruct:
-#             state = self.schema.deserialize(pstruct)
-#             return state
-#
-#         return {}
-#
-#     def generate_corpus_success(self, appstruct):
-#         # self._repopulate_schema(self.form.schema)
-#         print('success', appstruct)
-#
-#     def show(self, form):
-#         # Override to recreate the form, if needed to add new schemas
-#
-#         appstruct = self.appstruct()
-#
-#         schema = form.schema
-#
-#         # now add new schemas, at the end of all others
-#         data = parse(self.request.POST.items())
-#         for p in pipeline_registry.values():
-#             if 'add_%s' % p.name in data:
-#                 s = p.klass(name=rand(10), title=p.title)
-#                 schema.add(s)
-#
-#         use_ajax = getattr(self, 'use_ajax', False)
-#         ajax_options = getattr(self, 'ajax_options', '{}')
-#         form = Form(schema, buttons=self.buttons,
-#                            use_ajax=use_ajax, ajax_options=ajax_options,
-#                            **dict(self.form_options))
-#
-#         if appstruct is None:
-#             rendered = form.render()
-#         else:
-#             rendered = form.render(appstruct)
-#
-#         return {
-#             'form': rendered,
-#         }
 
 # cache = self.request.corpus_cache
 # cache[self.document] = {

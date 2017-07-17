@@ -8,7 +8,31 @@
          i18n:domain="deform">
 
   <div class="panel panel-default" title="${description}">
-    <div class="panel-heading">${title}</div>
+    <div class="panel-heading">
+      ${title}
+      <div class="btn-toolbar pull-right" role="toolbar">
+        <div class="btn-group">
+          <button
+             name="move_up_${field.schema.name}_success"
+             title="Move up this pipeline component"
+             class="btn btn-sm">
+            <span class="glyphicon glyphicon-arrow-up"></span>
+          </button>
+          <button
+                  name="move_down_${field.schema.name}_success"
+                  title="Move down this pipeline component"
+                  class="btn btn-sm">
+            <span class="glyphicon glyphicon-arrow-down"></span>
+          </button>
+          <button
+                  name="remove_${field.schema.name}_success"
+                  title="Remove this pipeline component"
+                  class="btn btn-sm">
+            <span class="glyphicon glyphicon-remove"></span>
+          </button>
+        </div>
+      </div>
+    </div>
     <div class="panel-body">
 
       <div tal:condition="errormsg"

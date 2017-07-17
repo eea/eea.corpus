@@ -12,6 +12,15 @@ Processor = namedtuple('Processor', ['name', 'klass', 'process', 'title'])
 
 
 def register_pipeline_component(name, schema, process, title):
+    """ Call this to register a new pipeline component.
+
+    A pipeline component is two pieces:
+
+    * a ``process(content, **kwargs)`` function that performs any needed
+    transformation on the input content.
+    * a schema that will provide the necessary parameters values for the
+    ``register`` function call
+    """
     # TODO: is it possible to avoid wrapping schema?
 
     class WrappedSchema(schema):

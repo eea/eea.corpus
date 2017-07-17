@@ -7,6 +7,9 @@
     <div class="row">
       <div class="col-md-12">
         <h1>Create a new corpus for ${view.document}</h1>
+        <p>Add necessary processing pipeline components. The pipeline is
+        processed in top-to-bottom in their order here.
+        </p>
       </div>
     </div>
 
