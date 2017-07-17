@@ -42,4 +42,7 @@ def main(global_config, **settings):
 
     config.scan()
 
+    config.include('eea.corpus.processing.textacy')
+    config.include('eea.corpus.processing.html')
+
     return config.make_wsgi_app()

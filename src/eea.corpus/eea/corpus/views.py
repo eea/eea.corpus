@@ -2,10 +2,13 @@
 """
 
 # from deform.field import Field
-from collections import namedtuple, OrderedDict
 from deform import Button
+from deform import Form
+from deform import ZPTRendererFactory
 from eea.corpus.async import queue
 from eea.corpus.corpus import build_corpus
+from eea.corpus.processing import build_pipeline
+from eea.corpus.processing import pipeline_registry
 from eea.corpus.schema import CreateCorpusSchema
 from eea.corpus.schema import TopicExtractionSchema
 from eea.corpus.schema import UploadSchema
@@ -20,12 +23,12 @@ from eea.corpus.utils import get_corpus
 from eea.corpus.utils import metadata
 from eea.corpus.utils import upload_location
 from peppercorn import parse
+from pkg_resources import resource_filename
 from pyramid.httpexceptions import HTTPFound
 from pyramid.renderers import render
 from pyramid.view import view_config
 from pyramid_deform import FormView
 import colander as c
-import deform
 import hashlib
 import logging
 import pyramid.httpexceptions as exc
@@ -35,7 +38,13 @@ import sys
 import traceback as tb
 
 logger = logging.getLogger('eea.corpus')
-# HTTPFound("/process/%s/" % doc)
+
+# Configure alternative Deform templates renderer. Uses an accordion to
+# render subforms
+deform_templates = resource_filename('deform', 'templates')
+eeacorpus_templates = resource_filename('eea.corpus', 'templates/accordion')
+search_path = (eeacorpus_templates, deform_templates)
+accordion_renderer = ZPTRendererFactory(search_path)
 
 
 def _resolve(field, request, appstruct):
@@ -165,24 +174,21 @@ class TopicsView(FormView):
 
 @view_config(
     route_name="process_csv",
-    renderer="templates/process.pt"
+    renderer="templates/create_corpus.pt"
 )
 class CreateCorpusView(FormView):
     schema = CreateCorpusSchema()
-    buttons = ('generate corpus', )
+
+    preview = ()        # will hold preview results
+
+    _buttons = {
+        'generate_corpus': 'Generate Corpus',
+        'preview': 'Preview',
+    }
 
     @property
     def document(self):
         return document_name(self.request)
-
-    def before(self, form):
-        form.appstruct = self.appstruct()
-
-    def appstruct(self):
-        appstruct = get_appstruct(self.request, self.schema)
-        # fname = document_name(self.request)
-        # appstruct['column'] = default_column(fname, self.request)
-        return appstruct
 
     def generate_corpus_id(self, appstruct):
         m = hashlib.sha224()
@@ -191,7 +197,8 @@ class CreateCorpusView(FormView):
         return m.hexdigest()
 
     def generate_corpus_success(self, appstruct):
-        print(appstruct)
+        print('success', appstruct)
+        return
 
         s = appstruct.copy()
         s['doc'] = self.document
@@ -207,12 +214,124 @@ class CreateCorpusView(FormView):
         raise exc.HTTPFound('/view/%s/%s/job/%s' %
                             (self.document, corpus_id, job.id))
 
-        # import pdb; pdb.set_trace()
-        # cache = self.request.corpus_cache
-        # cache[self.document] = {
-        #     corpus_name: corpus
-        # }
-        # raise exc.HTTPFound('/view/%s/%s' % (self.document, corpus_name))
+    def get_pipeline_components(self):
+        data = parse(self.request.POST.items())
+        state = self.schema.deserialize(data)
+        print('Repopulate schema', data)
+
+        # recreate existing schemas.
+        schemas = {}
+
+        for k, v in data.items():
+            if isinstance(v, dict):   # might be a schema cstruct
+                _type = v.pop('schema_type', None)
+                if _type is not None:       # yeap, a schema
+                    p = pipeline_registry[_type]
+                    kwargs = state[k].copy()
+                    kwargs.pop('schema_type')
+                    position = kwargs.pop('schema_position')
+                    schemas[position] = (p.process, kwargs)
+
+        pipeline = [schemas[k] for k in sorted(schemas.keys())]
+        return pipeline
+
+    def preview_success(self, appstruct):
+        pipeline = self.get_pipeline_components()
+        pipeline = build_pipeline(
+            self.document, appstruct['column'], pipeline
+        )
+
+        res = []
+        for i in range(5):
+            c = next(pipeline)
+            print(c)
+            res.append(c)
+
+        self.preview = res
+
+    def _success_handler(self, appstruct):
+        print("Success generic", appstruct)
+
+    def __getattr__(self, name):
+        """ Automatically create success handlers for the available buttons
+        """
+        if name.endswith("_success") and (name not in self._buttons):
+            return self._success_handler
+
+        return self.__getattribute__(name)
+
+    @property
+    def buttons(self):
+        _b = [
+            Button('add_%s' % x.name, 'Add %s processor' % x.title)
+            for x in pipeline_registry.values()
+        ]
+        return _b + [Button(n, t) for n, t in self._buttons.items()]
+
+    def form_class(self, schema, **kwargs):
+        data = parse(self.request.POST.items())
+        print('Repopulate schema', data)
+
+        # recreate existing schemas.
+        schemas = {}
+        for k, v in data.items():
+            if isinstance(v, dict):   # might be a schema cstruct
+                _type = v.pop('schema_type', None)
+                if _type is not None:       # yeap, a schema
+                    p = pipeline_registry[_type]
+                    s = p.klass(name=k, title=p.title,
+                                renderer=accordion_renderer)
+                    pos = v.pop('schema_position')
+                    schemas[pos] = s
+        for k in sorted(schemas.keys()):
+            print('adding schema', schemas[k])
+            schema.add(schemas[k])
+
+        self.form = Form(schema, **kwargs)
+        return self.form
+
+    def appstruct(self):
+        # This is only called on success, to populate the success form
+
+        pstruct = parse(self.request.POST.items())
+        if pstruct:
+            state = self.schema.deserialize(pstruct)
+            return state
+
+        return {}
+
+    def show(self, form):
+        # Override to recreate the form, if needed to add new schemas
+
+        appstruct = self.appstruct()
+        schema = form.schema
+
+        # now add new schemas, at the end of all others
+        data = parse(self.request.POST.items())
+        for p in pipeline_registry.values():
+            if 'add_%s' % p.name in data:
+                s = p.klass(name=rand(10), title=p.title)
+                f = s['schema_position']
+                f.default = f.missing = len(schema.children)
+                schema.add(s)
+
+        use_ajax = getattr(self, 'use_ajax', False)
+        ajax_options = getattr(self, 'ajax_options', '{}')
+        form = Form(
+            schema, buttons=self.buttons, use_ajax=use_ajax,
+            ajax_options=ajax_options,
+            renderer=accordion_renderer,
+            **dict(self.form_options)
+        )
+
+        if appstruct is None:
+            rendered = form.render()
+        else:
+            rendered = form.render(appstruct)
+
+        return {
+            'form': rendered,
+        }
 
 
 @view_config(route_name='view_job', renderer='templates/job.pt')
@@ -240,153 +359,111 @@ def handle_exc(context, request):
     }
 
 
-class DemoSchema(c.Schema):
-    """ Process text schema
-    """
+# class DemoSchema(c.Schema):
+#     """ Process text schema
+#     """
+#
+#     title = c.SchemaNode(
+#         c.String(),
+#         validator=c.Length(min=1),
+#         title='Corpus title.',
+#         description='Letters, numbers and spaces',
+#     )
+#
+#
+# @view_config(
+#     route_name="demo",
+#     renderer="templates/simpleform.pt"
+# )
+# class Demo(FormView):
+#
+#     schema = DemoSchema()
+#
+#     # def __init__(self, request):
+#     #     self.schema = DemoSchema()
+#     #     return FormView.__init__(self, request)
+#
+#     def _success_handler(self, appstruct):
+#         print("Success generic", appstruct)
+#
+#     def __getattr__(self, name):
+#         if name.endswith("_success") and name != 'generate_corpus_success':
+#             return self._success_handler
+#
+#         return self.__getattribute__(name)
+#
+#     @property
+#     def buttons(self):
+#         _b = [
+#             Button('add_%s' % x.name, 'Add %s pipeline' % x.title)
+#             for x in pipeline_registry.values()
+#         ]
+#         return _b + [
+#             Button('generate_corpus', 'Generate Corpus'),
+#         ]
+#
+#     def _repopulate_schema(self, schema):
+#         data = parse(self.request.POST.items())
+#         print('Repopulate schema', data)
+#
+#         # recreate existing schemas.
+#         for k, v in data.items():
+#             if isinstance(v, dict):   # might be a schema cstruct
+#                 if v.get('schema_type'):        # yeap, a schema
+#                     p = pipeline_registry[v['schema_type']]
+#                     s = p.klass(name=k, title=p.title)
+#                     schema.add(s)
+#
+#     def form_class(self, schema, **kwargs):
+#         self._repopulate_schema(schema)
+#         self.form = Form(schema, **kwargs)
+#         return self.form
+#
+#     def appstruct(self):
+#         # This is only called on success, to populate the success form
+#
+#         pstruct = parse(self.request.POST.items())
+#         if pstruct:
+#             state = self.schema.deserialize(pstruct)
+#             return state
+#
+#         return {}
+#
+#     def generate_corpus_success(self, appstruct):
+#         # self._repopulate_schema(self.form.schema)
+#         print('success', appstruct)
+#
+#     def show(self, form):
+#         # Override to recreate the form, if needed to add new schemas
+#
+#         appstruct = self.appstruct()
+#
+#         schema = form.schema
+#
+#         # now add new schemas, at the end of all others
+#         data = parse(self.request.POST.items())
+#         for p in pipeline_registry.values():
+#             if 'add_%s' % p.name in data:
+#                 s = p.klass(name=rand(10), title=p.title)
+#                 schema.add(s)
+#
+#         use_ajax = getattr(self, 'use_ajax', False)
+#         ajax_options = getattr(self, 'ajax_options', '{}')
+#         form = Form(schema, buttons=self.buttons,
+#                            use_ajax=use_ajax, ajax_options=ajax_options,
+#                            **dict(self.form_options))
+#
+#         if appstruct is None:
+#             rendered = form.render()
+#         else:
+#             rendered = form.render(appstruct)
+#
+#         return {
+#             'form': rendered,
+#         }
 
-    title = c.SchemaNode(
-        c.String(),
-        validator=c.Length(min=1),
-        title='Corpus title.',
-        description='Letters, numbers and spaces',
-    )
-
-
-# TODO: replace with venusian registry or a named utility
-_pipelines_registry = OrderedDict()
-
-Pipeline = namedtuple('Pipeline', ['name', 'klass', 'title'])
-
-
-def register_pipeline_schema(title):
-
-    def wrapper(cls):
-        pipeline_name = cls.__name__
-
-        class WrappedSchema(cls):
-            schema_type = c.SchemaNode(
-                c.String(),
-                # widget=deform.widget.HiddenWidget(),
-                default=pipeline_name,
-                missing=pipeline_name,
-            )
-
-        p = Pipeline(pipeline_name, WrappedSchema, title)
-        _pipelines_registry[pipeline_name] = p
-        return WrappedSchema
-
-    return wrapper
-
-
-@register_pipeline_schema(title="Just a Second")
-class SecondSchema(c.Schema):
-    """ Process text schema
-    """
-
-    second_field = c.SchemaNode(
-        c.String(),
-        validator=c.Length(min=1),
-        title='Second title.',
-    )
-
-
-@register_pipeline_schema(title="Just a Third")
-class ThirdSchema(c.Schema):
-    """ Process text schema
-    """
-
-    third_field = c.SchemaNode(
-        c.String(),
-        validator=c.Length(min=1),
-        title='Third title.',
-    )
-
-
-@view_config(
-    route_name="demo",
-    renderer="templates/simpleform.pt"
-)
-class Demo(FormView):
-
-    def __init__(self, request):
-        self.schema = DemoSchema()
-        return FormView.__init__(self, request)
-
-    def _success_handler(self, appstruct):
-        print("Success generic", appstruct)
-
-    def __getattr__(self, name):
-        if name.endswith("_success") and name != 'generate_corpus_success':
-            return self._success_handler
-
-        return self.__getattribute__(name)
-
-    @property
-    def buttons(self):
-        _b = [
-            Button('add_%s' % x.name, 'Add %s pipeline' % x.title)
-            for x in _pipelines_registry.values()
-        ]
-        return _b + [
-            Button('generate_corpus', 'Generate Corpus'),
-        ]
-
-    def _repopulate_schema(self, schema):
-        data = parse(self.request.POST.items())
-        print('Repopulate schema', data)
-
-        # recreate existing schemas.
-        for k, v in data.items():
-            if isinstance(v, dict):   # might be a schema cstruct
-                if v.get('schema_type'):        # yeap, a schema
-                    p = _pipelines_registry[v['schema_type']]
-                    s = p.klass(name=k, title=p.title)
-                    schema.add(s)
-
-    def form_class(self, schema, **kwargs):
-        self._repopulate_schema(schema)
-        self.form = deform.Form(schema, **kwargs)
-        return self.form
-
-    def appstruct(self):
-        # This is only called on success, to populate the success form
-
-        pstruct = parse(self.request.POST.items())
-        if pstruct:
-            state = self.schema.deserialize(pstruct)
-            return state
-
-        return {}
-
-    def generate_corpus_success(self, appstruct):
-        # self._repopulate_schema(self.form.schema)
-        print('success', appstruct)
-
-    def show(self, form):
-        # Override to recreate the form, if needed to add new schemas
-
-        appstruct = self.appstruct()
-
-        schema = form.schema
-
-        # now add new schemas, at the end of all others
-        data = parse(self.request.POST.items())
-        for p in _pipelines_registry.values():
-            if 'add_%s' % p.name in data:
-                s = p.klass(name=rand(10), title=p.title)
-                schema.add(s)
-
-        use_ajax = getattr(self, 'use_ajax', False)
-        ajax_options = getattr(self, 'ajax_options', '{}')
-        form = deform.Form(schema, buttons=self.buttons,
-                           use_ajax=use_ajax, ajax_options=ajax_options,
-                           **dict(self.form_options))
-
-        if appstruct is None:
-            rendered = form.render()
-        else:
-            rendered = form.render(appstruct)
-
-        return {
-            'form': rendered,
-        }
+# cache = self.request.corpus_cache
+# cache[self.document] = {
+#     corpus_name: corpus
+# }
+# raise exc.HTTPFound('/view/%s/%s' % (self.document, corpus_name))

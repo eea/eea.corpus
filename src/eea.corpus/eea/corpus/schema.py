@@ -98,78 +98,6 @@ class TopicExtractionSchema(Schema):
     )
 
 
-class TextacyPipeline(Schema):
-
-    fix_unicode = SchemaNode(
-        Bool(),
-        default=True,
-        title="Fix Unicode",
-        label='Fix broken unicode such as mojibake and garbled HTML entities.',
-    )
-    lowercase = SchemaNode(
-        Bool(),
-        default=False,
-        label="All text is lower-cased",
-        title='Lowercase',
-    )
-    transliterate = SchemaNode(
-        Bool(),
-        default=True,
-        title='Transliterate',
-        label="Convert non-ASCII characters to their closest ASCII equivalent."
-    )
-    no_urls = SchemaNode(
-        Bool(),
-        default=True,
-        title='No URLs',
-        label="Replace all URL strings with ‘URL‘."
-    )
-    no_emails = SchemaNode(
-        Bool(),
-        default=True,
-        title='No emails',
-        label="Replace all email strings with ‘EMAIL‘."
-    )
-    no_phone_numbers = SchemaNode(
-        Bool(),
-        default=True,
-        title='No phone numbers',
-        label="Replace all phone number strings with ‘PHONE‘."
-    )
-    no_numbers = SchemaNode(
-        Bool(),
-        default=True,
-        title="No numbers",
-        label="Replace all number-like strings with ‘NUMBER‘."
-    )
-    no_currency_symbols = SchemaNode(
-        Bool(),
-        default=True,
-        title="No currency symbols",
-        label="Replace all currency symbols with their standard 3-letter "
-        "abbreviations."
-    )
-    no_punct = SchemaNode(
-        Bool(),
-        default=True,
-        title="No punctuation",
-        label="Remove all punctuation (replace with empty string)."
-    )
-    no_contractions = SchemaNode(
-        Bool(),
-        default=True,
-        title="No contractions",
-        label="Replace English contractions with their unshortened forms."
-    )
-    no_accents = SchemaNode(
-        Bool(),
-        default=True,
-        title="No accents",
-        label="Replace all accented characters with unaccented versions; "
-        "NB: if transliterate is True, this option is redundant."
-    )
-
-
 class CreateCorpusSchema(colander.MappingSchema):
     """ Process text schema
     """
@@ -193,12 +121,12 @@ class CreateCorpusSchema(colander.MappingSchema):
         validator=colander.Length(min=1),
         title='Text column in CSV file',
     )
-    normalize = SchemaNode(
-        Bool(),
-        default=True,
-        title="Enable text normalization",
-        label='Preprocess the text according to settings below. '
-        'All other settings are ignored.',
-    )
 
-    textacy_pipeline = TextacyPipeline()
+    # normalize = SchemaNode(
+    #     Bool(),
+    #     default=True,
+    #     title="Enable text processing pipeline",
+    #     label='Preprocess the text according to settings below.',
+    # )
+
+    # textacy_pipeline = TextacyPipeline()

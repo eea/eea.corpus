@@ -30,34 +30,20 @@
               <li tal:repeat="msg messages" class="well" >${msg}</li>
             </ul>
           </div>
-          <!-- <div class="col&#45;md&#45;2"> -->
-          <!--   <!&#45;&#45; <img class="logo img&#38;#45;responsive" src="${request.static_url('eea.corpus:static/pyramid.png')}" alt="pyramid web framework"> &#45;&#45;> -->
-          <!-- </div> -->
           <div class="col-md-3">
-            <p>
-            <a class="btn primary" href="/"><i class="glyphicon glyphicon-home"></i> Home</a>
-            <a class="btn secondary" href="/upload"><i class="glyphicon glyphicon-cloud-upload"></i> Upload a new file</a>
-            </p>
+            <div metal:define-slot="sidebar-top">
+              <p>
+              <a class="btn primary" href="/"><i class="glyphicon glyphicon-home"></i> Home</a>
+              <a class="btn secondary" href="/upload"><i class="glyphicon glyphicon-cloud-upload"></i> Upload a new file</a>
+              </p>
+            </div>
             <div metal:define-slot="sidebar"></div>
           </div>
           <div class="col-md-9">
             <div metal:define-slot="content"></div>
           </div>
         </div>
-        <div class="row">
-          <div class="links">
-            <!-- <ul> -->
-            <!--   <li><i class="glyphicon glyphicon&#45;cog icon&#45;muted"></i><a href="https://github.com/Pylons/pyramid">Github Project</a></li> -->
-            <!--   <li><i class="glyphicon glyphicon&#45;globe icon&#45;muted"></i><a href="https://webchat.freenode.net/?channels=pyramid">IRC Channel</a></li> -->
-            <!--   <li><i class="glyphicon glyphicon&#45;home icon&#45;muted"></i><a href="https://pylonsproject.org">Pylons Project</a></li> -->
-            <!-- </ul> -->
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-md-12">
-            Copyright &copy; European Environment Agency
-          </div>
-        </div>
+        <div metal:define-slot="full-width"></div>
       </div>
     </div>
 
