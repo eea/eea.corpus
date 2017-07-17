@@ -297,32 +297,35 @@ class CreateCorpusView(FormView):
         # assume the schemas have a contigous range of schema_position values
         # assume schemas are properly ordered
 
+        def reordered(ss):
+            for i, s in enumerate(ss):
+                f = s['schema_position']
+                f.default = f.missing = i
+            return ss
+
         for i, s in enumerate(schemas):
 
             if "remove_%s_success" % s.name in data:
                 del schemas[i]
-                for z, s in enumerate(schemas):
-                    f = s['schema_position']
-                    f.default = f.missing = z
-                return schemas
+                return reordered(schemas)
 
             if "move_up_%s_success" % s.name in data:
                 if i == 0:
                     return schemas      # can't move a schema that's first
                 # switch position between list members
-                pos = max(i-1, 0)
-                S = schemas
-                schemas = S[:i] + [S[i], S[pos]] + S[i+2:]
-                return schemas
+                this, neighb = schemas[i], schemas[i-1]
+                schemas[i-1] = this
+                schemas[i] = neighb
+                return reordered(schemas)
 
             if "move_down_%s_success" % s.name in data:
-                if i == len(schemas):
+                if i == len(schemas) - 1:
                     return schemas      # can't move a schema that's last
                 # switch position between list members
-                pos = max(i+1, len(schemas))
-                S = schemas
-                schemas = S[:i] + [S[pos], S[i]] + S[i+2:]
-                return schemas
+                this, neighb = schemas[i], schemas[i+1]
+                schemas[i+1] = this
+                schemas[i] = neighb
+                return reordered(schemas)
 
         return schemas
 
