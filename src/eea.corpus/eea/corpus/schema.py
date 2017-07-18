@@ -1,4 +1,4 @@
-from colander import Int, Schema, SchemaNode, String, Float, Bool
+from colander import Int, Schema, SchemaNode, String, Float     # , Bool
 from eea.corpus.processing import pipeline_registry
 from eea.corpus.utils import upload_location
 import colander
@@ -100,21 +100,14 @@ class TopicExtractionSchema(Schema):
     )
 
 
-class PipelineSelectWidget(deform.widget.SelectWidget):
-    template = "pipeline_select"
-
-
 @colander.deferred
-def pipeline_components_select_widget(node, kw):
-    """ A select widget that reads the csv file to show available columns
-    """
-
-    choices = [(p.name, p.title) for p in pipeline_registry.values()]
-    default = ''
-    return PipelineSelectWidget(
-        values=choices,
-        default=default
-    )
+def pipeline_components_widget(node, kw):
+    values = [('', '-Select-')]
+    values += [(p.name, p.title) for p in pipeline_registry.values()]
+    return deform.widget.SelectWidget(
+            template="pipeline_select",
+            values=values,
+        )
 
 
 class CreateCorpusSchema(colander.MappingSchema):
@@ -127,6 +120,7 @@ class CreateCorpusSchema(colander.MappingSchema):
         title='Corpus title.',
         description='Letters, numbers and spaces',
     )
+
     description = SchemaNode(
         String(),
         widget=deform.widget.TextAreaWidget(),
@@ -143,6 +137,7 @@ class CreateCorpusSchema(colander.MappingSchema):
 
     pipeline_components = SchemaNode(
         String(),
-        widget=pipeline_components_select_widget,
+        missing='',
+        widget=pipeline_components_widget,
         title="Add a new pipeline component"
     )

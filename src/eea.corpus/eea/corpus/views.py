@@ -27,7 +27,7 @@ from pyramid.httpexceptions import HTTPFound
 from pyramid.renderers import render
 from pyramid.view import view_config
 from pyramid_deform import FormView
-import colander as c
+import deform
 import hashlib
 import logging
 import pyramid.httpexceptions as exc
@@ -44,25 +44,6 @@ deform_templates = resource_filename('deform', 'templates')
 eeacorpus_templates = resource_filename('eea.corpus', 'templates/deform')
 search_path = (eeacorpus_templates, deform_templates)
 deform_renderer = ZPTRendererFactory(search_path)
-
-
-def _resolve(field, request, appstruct):
-    if field.name in request.params:
-        val = request.params[field.name]
-        if val is None:
-            val = c.null
-        appstruct[field.name] = val
-    for child in field.children:
-        _resolve(child, request, appstruct)
-
-
-def get_appstruct(request, schema):
-    """ Function inspired by similar code from Kotti
-    """
-    appstruct = {}
-    for field in schema.children:
-        _resolve(field, request, appstruct)
-    return appstruct
 
 
 def rand(n):
@@ -127,18 +108,6 @@ class TopicsView(FormView):
         # TODO: show info about processing and column
         return metadata(self.corpus())
 
-    def before(self, form):
-        form.appstruct = self.appstruct()
-
-    def appstruct(self):
-        # TODO: this is not safe to use
-        # use pstruct = parse(self.request.POST.items())
-        appstruct = get_appstruct(self.request, self.schema)
-        # fname = document_name(self.request)
-        # appstruct['column'] = default_column(fname, self.request)
-
-        return appstruct
-
     def visualise(self, appstruct, method):
         max_df = appstruct['max_df']
         min_df = appstruct['min_df']
@@ -179,11 +148,13 @@ class CreateCorpusView(FormView):
     schema = CreateCorpusSchema()
 
     preview = ()        # will hold preview results
+    preview_size = 5    # number of documents (csv rows) to preview
 
-    _buttons = {
-        'preview': 'Preview',
-        'generate_corpus': 'Generate Corpus',
-    }
+    buttons = (
+        Button('preview', 'Preview'),
+        Button('generate_corpus', 'Generate Corpus'),
+        Button('save_pipeline', 'Save pipeline as template'),
+    )
 
     @property
     def document(self):
@@ -214,6 +185,9 @@ class CreateCorpusView(FormView):
                             (self.document, corpus_id, job.id))
 
     def get_pipeline_components(self):
+        """ Returns a pipeline, a list of (process, arguments)
+        """
+
         data = parse(self.request.POST.items())
         state = self.schema.deserialize(data)
         print('Repopulate schema', data)
@@ -235,38 +209,21 @@ class CreateCorpusView(FormView):
         return pipeline
 
     def preview_success(self, appstruct):
+        """ Success handler for preview button
+        """
+
         pipeline = self.get_pipeline_components()
         pipeline = build_pipeline(
             self.document, appstruct['column'], pipeline
         )
 
         res = []
-        for i in range(5):
+        for i in range(self.preview_size):
             c = next(pipeline)
             print(c)
             res.append(c)
 
         self.preview = res
-
-    def _success_handler(self, appstruct):
-        print("Success generic", appstruct)
-
-    def __getattr__(self, name):
-        """ Automatically create success handlers for the available buttons
-        """
-        if name.endswith("_success") and (name not in self._buttons):
-            return self._success_handler
-
-        return self.__getattribute__(name)
-
-    @property
-    def buttons(self):
-        # _b = [
-        #     Button('add_%s' % x.name, 'Add %s processor' % x.title)
-        #     for x in pipeline_registry.values()
-        # ]
-        _b = []
-        return _b + [Button(n, t) for n, t in self._buttons.items()]
 
     def form_class(self, schema, **kwargs):
         data = parse(self.request.POST.items())
@@ -290,7 +247,11 @@ class CreateCorpusView(FormView):
         for s in schemas:
             schema.add(s)
 
-        self.form = Form(schema, **kwargs)
+        # move the pipeline components select widget to the bottom
+        w = schema.__delitem__('pipeline_components')
+        schema.add(w)
+
+        self.form = Form(schema, renderer=deform_renderer, **kwargs)
         return self.form
 
     def _apply_schema_edits(self, schemas, data):
@@ -329,30 +290,32 @@ class CreateCorpusView(FormView):
 
         return schemas
 
-    def appstruct(self):
-        # This is only called on success, to populate the success form
-
-        pstruct = parse(self.request.POST.items())
-        if pstruct:
-            state = self.schema.deserialize(pstruct)
-            return state
-
-        return {}
-
     def show(self, form):
         # Override to recreate the form, if needed to add new schemas
 
-        appstruct = self.appstruct()
+        # re-validate form, it is possible to be changed
+        try:
+            controls = self.request.POST.items()
+            appstruct = form.validate(controls)
+        except deform.exception.ValidationFailure:
+            appstruct = {}
+            # return self.failure(e)
+
         schema = form.schema
 
         # now add new schemas, at the end of all others
-        data = parse(self.request.POST.items())
-        for p in pipeline_registry.values():
-            if 'add_%s' % p.name in data:
-                s = p.klass(name=rand(10), title=p.title)
-                f = s['schema_position']
-                f.default = f.missing = len(schema.children)
-                schema.add(s)
+        add_component = appstruct.get('pipeline_components')
+        if add_component:
+            p = pipeline_registry[add_component]
+            s = p.klass(name=rand(10), title=p.title)
+            f = s['schema_position']
+            f.default = f.missing = len(schema.children)
+            schema.add(s)
+            appstruct['pipeline_components'] = ''
+
+        # move pipeline_components to the bottom
+        w = schema.__delitem__('pipeline_components')
+        schema.add(w)
 
         use_ajax = getattr(self, 'use_ajax', False)
         ajax_options = getattr(self, 'ajax_options', '{}')
@@ -402,3 +365,56 @@ def handle_exc(context, request):
 #     corpus_name: corpus
 # }
 # raise exc.HTTPFound('/view/%s/%s' % (self.document, corpus_name))
+
+#
+# def __getattr__(self, name):
+#     """ Automatically create success handlers for the available buttons
+#
+#     pyramid_deform assumes that
+#     """
+#     if name.endswith("_success") and (name not in self._buttons):
+#         return lambda appstruct: {}
+#
+#     return self.__getattribute__(name)
+
+#
+# def _resolve(field, request, appstruct):
+#     if field.name in request.params:
+#         val = request.params[field.name]
+#         if val is None:
+#             val = c.null
+#         appstruct[field.name] = val
+#     for child in field.children:
+#         _resolve(child, request, appstruct)
+#
+#
+# def get_appstruct(request, schema):
+#     """ Function inspired by similar code from Kotti
+#     """
+#     appstruct = {}
+#     for field in schema.children:
+#         _resolve(field, request, appstruct)
+#     return appstruct
+    # def before(self, form):
+    #     form.appstruct = self.appstruct()
+
+    # def appstruct(self):
+    #     # TODO: this is not safe to use
+    #     # use pstruct = parse(self.request.POST.items())
+    #     appstruct = get_appstruct(self.request, self.schema)
+    #     # fname = document_name(self.request)
+    #     # appstruct['column'] = default_column(fname, self.request)
+    #
+    #     return appstruct
+
+    #
+    # def appstruct(self):
+    #     # This is only called on success, to populate the success form
+    #
+    #     pstruct = parse(self.request.POST.items())
+    #     if pstruct:
+    #         state = self.schema.deserialize(pstruct)
+    #         return state
+    #
+    #     return {}
+    #
