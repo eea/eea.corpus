@@ -11,7 +11,7 @@ pipeline_registry = OrderedDict()
 Processor = namedtuple('Processor', ['name', 'klass', 'process', 'title'])
 
 
-def register_pipeline_component(name, schema, process, title):
+def register_pipeline_component(schema, process, title):
     """ Call this to register a new pipeline component.
 
     A pipeline component is two pieces:
@@ -22,6 +22,7 @@ def register_pipeline_component(name, schema, process, title):
     ``register`` function call
     """
     # TODO: is it possible to avoid wrapping schema?
+    name = (process.__module__ + '.' + process.__qualname__).replace('.', '_')
 
     class WrappedSchema(schema):
         schema_type = c.SchemaNode(

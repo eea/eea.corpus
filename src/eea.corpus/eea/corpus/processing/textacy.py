@@ -104,7 +104,6 @@ def process(content, **settings):
 
 def includeme(config):
     register_pipeline_component(
-        name="textacy_preprocess",
         schema=TextacyPreprocess,
         process=process,
         title="Textacy Preprocessing"

@@ -1,7 +1,6 @@
 """ Pyramid views. Main UI for the eea.corpus
 """
 
-# from deform.field import Field
 from deform import Button
 from deform import Form
 from deform import ZPTRendererFactory
@@ -39,12 +38,12 @@ import traceback as tb
 
 logger = logging.getLogger('eea.corpus')
 
-# Configure alternative Deform templates renderer. Uses an accordion to
-# render subforms
+# Configure alternative Deform templates renderer. Includes overrides for
+# default deform templates
 deform_templates = resource_filename('deform', 'templates')
-eeacorpus_templates = resource_filename('eea.corpus', 'templates/accordion')
+eeacorpus_templates = resource_filename('eea.corpus', 'templates/deform')
 search_path = (eeacorpus_templates, deform_templates)
-accordion_renderer = ZPTRendererFactory(search_path)
+deform_renderer = ZPTRendererFactory(search_path)
 
 
 def _resolve(field, request, appstruct):
@@ -182,8 +181,8 @@ class CreateCorpusView(FormView):
     preview = ()        # will hold preview results
 
     _buttons = {
-        'generate_corpus': 'Generate Corpus',
         'preview': 'Preview',
+        'generate_corpus': 'Generate Corpus',
     }
 
     @property
@@ -262,10 +261,11 @@ class CreateCorpusView(FormView):
 
     @property
     def buttons(self):
-        _b = [
-            Button('add_%s' % x.name, 'Add %s processor' % x.title)
-            for x in pipeline_registry.values()
-        ]
+        # _b = [
+        #     Button('add_%s' % x.name, 'Add %s processor' % x.title)
+        #     for x in pipeline_registry.values()
+        # ]
+        _b = []
         return _b + [Button(n, t) for n, t in self._buttons.items()]
 
     def form_class(self, schema, **kwargs):
@@ -280,7 +280,7 @@ class CreateCorpusView(FormView):
                 if _type is not None:       # yeap, a schema
                     p = pipeline_registry[_type]
                     s = p.klass(name=k, title=p.title,
-                                renderer=accordion_renderer)
+                                renderer=deform_renderer)
                     pos = v.pop('schema_position')
                     schemas[pos] = s
 
@@ -359,7 +359,7 @@ class CreateCorpusView(FormView):
         form = Form(
             schema, buttons=self.buttons, use_ajax=use_ajax,
             ajax_options=ajax_options,
-            renderer=accordion_renderer,
+            renderer=deform_renderer,
             **dict(self.form_options)
         )
 

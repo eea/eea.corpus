@@ -32,7 +32,6 @@ def process(content, **settings):
 
 def includeme(config):
     register_pipeline_component(
-        name="bs4_get_text",
         schema=BeautifulSoupText,
         process=process,
         title="Strip tags with BeautifulSoup"

@@ -1,8 +1,9 @@
-from eea.corpus.utils import upload_location
 from colander import Int, Schema, SchemaNode, String, Float, Bool
+from eea.corpus.processing import pipeline_registry
+from eea.corpus.utils import upload_location
+import colander
 import deform
 import pandas as pd
-import colander
 
 
 class Store(dict):
@@ -20,6 +21,7 @@ def columns_widget(node, kw):
 
     choices = []
     req = kw['request']
+
     md = req.matchdict or {}
     name = md.get('doc')
     if name:
@@ -98,6 +100,23 @@ class TopicExtractionSchema(Schema):
     )
 
 
+class PipelineSelectWidget(deform.widget.SelectWidget):
+    template = "pipeline_select"
+
+
+@colander.deferred
+def pipeline_components_select_widget(node, kw):
+    """ A select widget that reads the csv file to show available columns
+    """
+
+    choices = [(p.name, p.title) for p in pipeline_registry.values()]
+    default = ''
+    return PipelineSelectWidget(
+        values=choices,
+        default=default
+    )
+
+
 class CreateCorpusSchema(colander.MappingSchema):
     """ Process text schema
     """
@@ -122,11 +141,8 @@ class CreateCorpusSchema(colander.MappingSchema):
         title='Text column in CSV file',
     )
 
-    # normalize = SchemaNode(
-    #     Bool(),
-    #     default=True,
-    #     title="Enable text processing pipeline",
-    #     label='Preprocess the text according to settings below.',
-    # )
-
-    # textacy_pipeline = TextacyPipeline()
+    pipeline_components = SchemaNode(
+        String(),
+        widget=pipeline_components_select_widget,
+        title="Add a new pipeline component"
+    )
