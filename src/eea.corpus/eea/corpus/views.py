@@ -185,7 +185,7 @@ class CreateCorpusView(FormView):
                     kwargs = state[k].copy()
                     kwargs.pop('schema_type')
                     position = kwargs.pop('schema_position')
-                    schemas[position] = (p.process, kwargs)
+                    schemas[position] = (p.name, kwargs)
 
         pipeline = [schemas[k] for k in sorted(schemas.keys())]
         return pipeline
@@ -212,9 +212,6 @@ class CreateCorpusView(FormView):
 
     def generate_corpus_success(self, appstruct):
         pipeline = self.get_pipeline_components()
-        pipeline = build_pipeline(
-            self.document, appstruct['column'], pipeline
-        )
 
         s = appstruct.copy()
         s['doc'] = self.document

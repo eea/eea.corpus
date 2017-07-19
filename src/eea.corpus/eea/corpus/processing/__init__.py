@@ -63,7 +63,10 @@ def build_pipeline(file_name, text_column, pipeline):
     df = pd.read_csv(document_path)
     content_stream = df[text_column].__iter__()
 
-    for process, kwargs in pipeline:
+    import pdb; pdb.set_trace()
+    for component_name, kwargs in pipeline:
+        component = pipeline_registry[component_name]
+        process = component.process
         content_stream = process(content_stream, **kwargs)
 
     return content_stream
