@@ -1,8 +1,27 @@
 version: "2"
+
 services:
+
   pyramid:
     image: eeacms/corpus:pyramid_service
     ports:
       - "8181:6543"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./src:/src
+      - corpus-data:/corpus
+
   redis:
     image: redis
+
+  worker:
+      build: .
+      command: worker production.ini
+      environment:
+        - REDIS_URL=redis://redis:6379/0
+      volumes:
+        - corpus-data:/corpus
+
+volumes:
+  corpus-data:
