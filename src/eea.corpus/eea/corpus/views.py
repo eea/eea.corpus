@@ -299,12 +299,16 @@ class CreateCorpusView(FormView):
         # Override to recreate the form, if needed to add new schemas
 
         # re-validate form, it is possible to be changed
-        try:
-            controls = self.request.POST.items()
-            appstruct = form.validate(controls)
-        except deform.exception.ValidationFailure:
-            appstruct = {}
-            # return self.failure(e)
+        appstruct = {}
+        controls = list(self.request.POST.items())
+        if controls:
+            print('have controls')
+
+            try:
+                appstruct = form.validate(controls)
+            except deform.exception.ValidationFailure as e:
+                print('failure, returning failure')
+                return self.failure(e)
 
         schema = form.schema
 
@@ -331,13 +335,8 @@ class CreateCorpusView(FormView):
             **dict(self.form_options)
         )
 
-        if appstruct is None:
-            rendered = form.render()
-        else:
-            rendered = form.render(appstruct)
-
         return {
-            'form': rendered,
+            'form': form.render(appstruct),
         }
 
 
