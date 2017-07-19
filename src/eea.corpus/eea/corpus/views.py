@@ -166,24 +166,6 @@ class CreateCorpusView(FormView):
             m.update(str(kv).encode('ascii'))
         return m.hexdigest()
 
-    def generate_corpus_success(self, appstruct):
-        print('success', appstruct)
-        return
-
-        s = appstruct.copy()
-        s['doc'] = self.document
-        corpus_id = self.generate_corpus_id(s)
-
-        job = queue.enqueue(build_corpus,
-                            timeout='1h',
-                            args=(corpus_id,
-                                  self.document,
-                                  appstruct['column']),
-                            kwargs=appstruct)
-
-        raise exc.HTTPFound('/view/%s/%s/job/%s' %
-                            (self.document, corpus_id, job.id))
-
     def get_pipeline_components(self):
         """ Returns a pipeline, a list of (process, arguments)
         """
@@ -219,11 +201,37 @@ class CreateCorpusView(FormView):
 
         res = []
         for i in range(self.preview_size):
-            c = next(pipeline)
-            print(c)
+            try:
+                c = next(pipeline)
+            except StopIteration:
+                break
+            # print(c)
             res.append(c)
 
         self.preview = res
+
+    def generate_corpus_success(self, appstruct):
+        pipeline = self.get_pipeline_components()
+        pipeline = build_pipeline(
+            self.document, appstruct['column'], pipeline
+        )
+
+        s = appstruct.copy()
+        s['doc'] = self.document
+        corpus_id = self.generate_corpus_id(s)
+
+        job = queue.enqueue(build_corpus,
+                            timeout='1h',
+                            args=(
+                                pipeline,
+                                corpus_id,
+                                self.document,
+                                appstruct['column'],
+                            ),
+                            kwargs=appstruct)
+
+        raise exc.HTTPFound('/view/%s/%s/job/%s' %
+                            (self.document, corpus_id, job.id))
 
     def form_class(self, schema, **kwargs):
         data = parse(self.request.POST.items())

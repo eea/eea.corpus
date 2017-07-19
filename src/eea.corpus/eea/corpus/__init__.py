@@ -42,7 +42,8 @@ def main(global_config, **settings):
 
     config.scan()
 
-    config.include('eea.corpus.processing.textacy')
+    config.include('eea.corpus.processing.limit')
     config.include('eea.corpus.processing.html')
+    config.include('eea.corpus.processing.textacy')
 
     return config.make_wsgi_app()

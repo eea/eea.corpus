@@ -29,6 +29,7 @@ def _tokenize_phrases(content):
     return tokens
 
 
+# TODO: cleanup this code, it's no longer used
 def _normalize_content_stream(content_stream, **kw):
     """
     Iterate over the content, yielding one normalized content.
@@ -94,7 +95,7 @@ def save_corpus_metadata(corpus, file_name, corpus_id, text_column, **kw):
 
 
 @job(queue=queue)
-def build_corpus(corpus_id, file_name, text_column, **kw):
+def build_corpus(content_stream, corpus_id, file_name, text_column, **kw):
     """
     Load csv file from fpath. Each row is one document.
     It expects first column to be the Text / Body we want to analyse with
@@ -112,22 +113,45 @@ def build_corpus(corpus_id, file_name, text_column, **kw):
     cpath = corpus_base_path(file_name)      # corpus_id
     logger.info('Creating corpus for %s at %s', file_name, cpath)
 
-    # # read all eea documents from csv file
-    # eeadocs = textacy.fileio.read.read_csv(fpath)
-    #
-    # # use first column from the csv file as the text to analyse.
-    # # the rest is metadata
-    # content_stream, metadata_stream = split_record_fields(eeadocs,
-    #                                                       text_column)
-
-    document_path = upload_location(file_name)
-    df = pd.read_csv(document_path)
-    content_stream = df[text_column].__iter__()
-
-    normalize = kw.pop('normalize', False)
-    if normalize:
-        content_stream = _normalize_content_stream(content_stream, **kw)
-
     corpus = textacy.Corpus('en', texts=content_stream)
     corpus.save(cpath, name=corpus_id)
     save_corpus_metadata(corpus, file_name, corpus_id, text_column, **kw)
+
+# @job(queue=queue)
+# def build_corpus(corpus_id, file_name, text_column, **kw):
+#     """
+#     Load csv file from fpath. Each row is one document.
+#     It expects first column to be the Text / Body we want to analyse with
+#     textacy. The rest of the columns are stored as metadata associated
+#     to each document.
+#
+#     If normalize is set to True many aspects of the text will be
+#     normalized like bad unicode, currency symbols, phone numbers, urls,
+#     emails, punctuations, accents etc.
+#     see textacy.preprocess.preprocess_text for details.
+#
+#     Returns a textacy.Corpus.
+#     """
+#
+#     cpath = corpus_base_path(file_name)      # corpus_id
+#     logger.info('Creating corpus for %s at %s', file_name, cpath)
+#
+#     # # read all eea documents from csv file
+#     # eeadocs = textacy.fileio.read.read_csv(fpath)
+#     #
+#     # # use first column from the csv file as the text to analyse.
+#     # # the rest is metadata
+#     # content_stream, metadata_stream = split_record_fields(eeadocs,
+#     #                                                       text_column)
+#
+#     document_path = upload_location(file_name)
+#     df = pd.read_csv(document_path)
+#     content_stream = df[text_column].__iter__()
+#
+#     normalize = kw.pop('normalize', False)
+#     if normalize:
+#         content_stream = _normalize_content_stream(content_stream, **kw)
+#
+#     corpus = textacy.Corpus('en', texts=content_stream)
+#     corpus.save(cpath, name=corpus_id)
+#     save_corpus_metadata(corpus, file_name, corpus_id, text_column, **kw)

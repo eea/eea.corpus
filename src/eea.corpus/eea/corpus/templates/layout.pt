@@ -25,11 +25,18 @@
     <div class="starter-template">
       <div class="container-bs">
         <div class="row">
+
           <div class="col-md-12" tal:define="messages request.session.pop_flash()">
-            <ul tal:condition="messages">
-              <li tal:repeat="msg messages" class="well" >${msg}</li>
-            </ul>
+            <div tal:condition="messages">
+              <div tal:repeat="msg messages" class="alert alert-warning alert-dismissible fade in" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true" class="glyphicon glyphicon-remove"></span>
+                </button>
+                ${msg}
+              </div>
+            </div>
           </div>
+
           <div class="col-md-3">
             <div metal:define-slot="sidebar-top">
               <p>
