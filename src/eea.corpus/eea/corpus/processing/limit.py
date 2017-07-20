@@ -10,13 +10,14 @@ logger = logging.getLogger('eea.corpus')
 
 class LimitResults(Schema):
 
-    description = "Limit the number of processed documents"
+    # description = "Limit the number of processed documents"
 
     max_count = SchemaNode(
         Int(),
-        default=True,
+        default=0,
         missing=0,
-        title='Max number',
+        title='Results limit',
+        description='Set to 0 if you want unlimited results',
     )
 
 

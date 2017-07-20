@@ -21,7 +21,7 @@ def process(content, **settings):
             soup = BeautifulSoup(doc, 'html.parser')
             clean = soup.get_text()
         except Exception:
-            logger.warning(
+            logger.exception(
                 "BS4 Processor: got an error in extracting content: %r",
                 doc
             )

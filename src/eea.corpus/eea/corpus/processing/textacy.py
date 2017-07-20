@@ -95,7 +95,7 @@ def process(content, **settings):
         try:
             yield preprocess_text(doc, **settings)
         except Exception:
-            logger.warning(
+            logger.exception(
                 "Textacy Processor: got an error in extracting content: %r",
                 doc
             )

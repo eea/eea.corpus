@@ -140,6 +140,15 @@ class TopicsView(FormView):
         self.vis = out
 
 
+def schema_defaults(schema):
+    """ Returns a mapping of fielname:defaultvalue
+    """
+    res = {}
+    for child in schema.children:
+        res[child.name] = child.default or child.missing
+    return res
+
+
 @view_config(
     route_name="process_csv",
     renderer="templates/create_corpus.pt"
@@ -168,11 +177,15 @@ class CreateCorpusView(FormView):
 
     def get_pipeline_components(self):
         """ Returns a pipeline, a list of (process, arguments)
+
+        It uses the request to understand the structure of the pipeline. The
+        significant elements of that structure are the pipeline component name,
+        its position in the schema and its settings.
         """
 
         data = parse(self.request.POST.items())
         state = self.schema.deserialize(data)
-        print('Repopulate schema', data)
+        # print('Repopulate schema', data)
 
         # recreate existing schemas.
         schemas = {}
@@ -194,21 +207,21 @@ class CreateCorpusView(FormView):
         """ Success handler for preview button
         """
 
-        pipeline = self.get_pipeline_components()
-        pipeline = build_pipeline(
-            self.document, appstruct['column'], pipeline
-        )
-
-        res = []
-        for i in range(self.preview_size):
-            try:
-                c = next(pipeline)
-            except StopIteration:
-                break
-            # print(c)
-            res.append(c)
-
-        self.preview = res
+        # pipeline = self.get_pipeline_components()
+        # pipeline = build_pipeline(
+        #     self.document, appstruct['column'], pipeline
+        # )
+        #
+        # res = []
+        # for i in range(self.preview_size):
+        #     try:
+        #         c = next(pipeline)
+        #     except StopIteration:
+        #         break
+        #     # print(c)
+        #     res.append(c)
+        #
+        # self.preview = res
 
     def generate_corpus_success(self, appstruct):
         pipeline = self.get_pipeline_components()
@@ -232,7 +245,7 @@ class CreateCorpusView(FormView):
 
     def form_class(self, schema, **kwargs):
         data = parse(self.request.POST.items())
-        print('Repopulate schema', data)
+        # print('Repopulate schema', data)
 
         # recreate existing schemas.
         schemas = {}
@@ -279,25 +292,23 @@ class CreateCorpusView(FormView):
                 if i == 0:
                     return schemas      # can't move a schema that's first
                 # switch position between list members
-                this, neighb = schemas[i], schemas[i-1]
+                this, other = schemas[i], schemas[i-1]
                 schemas[i-1] = this
-                schemas[i] = neighb
+                schemas[i] = other
                 return reordered(schemas)
 
             if "move_down_%s_success" % s.name in data:
                 if i == len(schemas) - 1:
                     return schemas      # can't move a schema that's last
                 # switch position between list members
-                this, neighb = schemas[i], schemas[i+1]
+                this, other = schemas[i], schemas[i+1]
                 schemas[i+1] = this
-                schemas[i] = neighb
+                schemas[i] = other
                 return reordered(schemas)
 
         return schemas
 
     def show(self, form):
-        # Override to recreate the form, if needed to add new schemas
-
         # re-validate form, it is possible to be changed
         appstruct = {}
         controls = list(self.request.POST.items())
@@ -334,6 +345,41 @@ class CreateCorpusView(FormView):
             renderer=deform_renderer,
             **dict(self.form_options)
         )
+
+        # try to build a preview, if possible
+        if appstruct.get('column'):
+            pipeline = []
+
+            for c in schema.children:
+                _type = c.get('schema_type')
+
+                if _type:
+                    p = pipeline_registry[_type.default]
+                    if c.name in appstruct:
+                        kw = appstruct[c.name]
+                    else:
+                        kw = schema_defaults(c)
+
+                    # remove auxiliary fields that are not expected as args
+                    kw.pop('schema_position', None)
+                    kw.pop('schema_type', None)
+
+                    pipeline.append((p.name, kw))
+
+            print(pipeline)
+            content_stream = build_pipeline(
+                self.document, appstruct['column'], pipeline
+            )
+
+            res = []
+            for i in range(self.preview_size):
+                try:
+                    c = next(content_stream)
+                except StopIteration:
+                    break
+                res.append(c)
+
+            self.preview = res
 
         return {
             'form': form.render(appstruct),
