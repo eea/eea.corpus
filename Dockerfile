@@ -42,16 +42,15 @@ RUN pip --no-cache-dir install \
 # COPY corpus /corpus
 RUN mkdir /corpus
 
-COPY src /src
+ADD ./src /src
 
 # RUN pip install -r /src/eea.corpus/requirements.txt
 
 RUN cd /src/eea.corpus \
-      && rm -rf eea.corpus.egg-info* \
       && python setup.py develop
 
 WORKDIR /src/eea.corpus
 
-CMD pserve /src/eea.corpus/development.ini
+CMD python setup.py develop && pserve /src/eea.corpus/development.ini
 
 EXPOSE 6543

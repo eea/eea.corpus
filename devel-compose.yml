@@ -17,9 +17,9 @@ services:
   redis:
     image: redis
 
-  worker:
+  debugworker:
       build: .
-      command: worker development.ini
+      command: sh -c "python setup.py develop && worker development.ini"
       environment:
         - REDIS_URL=redis://redis:6379/0
       volumes:
