@@ -29,14 +29,9 @@ def columns_widget(node, kw):
         f = pd.read_csv(path)
         choices = [('', '')] + [(k, k) for k in f.keys()]
 
-    # from eea.corpus.utils import document_name
-    # from eea.corpus.utils import default_column
-    # doc = document_name(req)
-    # default = default_column(file_name, req)
-    default = ''
     return deform.widget.SelectWidget(
         values=choices,
-        default=default
+        default=''
     )
 
 
@@ -59,12 +54,6 @@ class TopicExtractionSchema(Schema):
         default=100,
         title="Max number of documents to process"
     )
-    # column = SchemaNode(
-    #     String(),
-    #     widget=columns_widget,
-    #     title='Text column in CSV file',
-    #     missing='',
-    # )
     min_df = SchemaNode(
         Float(),
         title="min_df",

@@ -202,37 +202,3 @@ def document_name(request):
         raise ValueError("Not a valid document: %s" % doc)
 
     return doc
-
-
-# def corpus_path(file_name, text_column):
-#     """ Returns the directory for a corpus based on file name and column
-#     """
-#
-#     base = corpus_base_path(file_name)
-#     cpath = os.path.join(base, text_column)
-#
-#     if not os.path.exists(cpath):
-#         os.makedirs(cpath)
-#
-#     return cpath
-# def default_column(file_name, request):
-#     """ Identify the "default" column.
-#
-#     * If a given column name is given in request, use that.
-#     * if not, identify it the corpus folder has any folders for columns.
-#         Use the first available such column
-#     """
-#     column = request.params.get('column') or ''
-#     cache = request.corpus_cache
-#
-#     # if there's no column, try to identify a column from the cache
-#     if not column:
-#         columns = list(cache.get(file_name, {}))
-#         if columns:
-#             column = columns[0]     # grab the first cached
-#
-#     # if there's no column, try to identify a column from the var dir
-#     columns = available_corpus(file_name)
-#     column = columns and columns[0] or 'text'
-#     print("Default column", column)
-#     return column
