@@ -321,14 +321,8 @@ class CreateCorpusView(FormView):
         w = schema.__delitem__('pipeline_components')
         schema.add(w)
 
-        use_ajax = getattr(self, 'use_ajax', False)
-        ajax_options = getattr(self, 'ajax_options', '{}')
-        form = Form(
-            schema, buttons=self.buttons, use_ajax=use_ajax,
-            ajax_options=ajax_options,
-            renderer=deform_renderer,
-            **dict(self.form_options)
-        )
+        form = Form(schema, buttons=self.buttons, renderer=deform_renderer,
+                    **dict(self.form_options))
 
         # try to build a preview, if possible
         if appstruct.get('column'):
