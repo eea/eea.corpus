@@ -185,7 +185,6 @@ class CreateCorpusView(FormView):
 
         data = parse(self.request.POST.items())
         state = self.schema.deserialize(data)
-        # print('Repopulate schema', data)
 
         # recreate existing schemas.
         schemas = {}
@@ -200,28 +199,11 @@ class CreateCorpusView(FormView):
                     position = kwargs.pop('schema_position')
                     schemas[position] = (p.name, kwargs)
 
-        pipeline = [schemas[k] for k in sorted(schemas.keys())]
-        return pipeline
+        return [schemas[k] for k in sorted(schemas.keys())]
 
     def preview_success(self, appstruct):
-        """ Success handler for preview button
-        """
-
-        # pipeline = self.get_pipeline_components()
-        # pipeline = build_pipeline(
-        #     self.document, appstruct['column'], pipeline
-        # )
-        #
-        # res = []
-        # for i in range(self.preview_size):
-        #     try:
-        #         c = next(pipeline)
-        #     except StopIteration:
-        #         break
-        #     # print(c)
-        #     res.append(c)
-        #
-        # self.preview = res
+        # no action needed, it's done by show()
+        return
 
     def generate_corpus_success(self, appstruct):
         pipeline = self.get_pipeline_components()
@@ -243,11 +225,8 @@ class CreateCorpusView(FormView):
         raise exc.HTTPFound('/view/%s/%s/job/%s' %
                             (self.document, corpus_id, job.id))
 
-    def form_class(self, schema, **kwargs):
+    def _extract_pipeline_components(self):
         data = parse(self.request.POST.items())
-        # print('Repopulate schema', data)
-
-        # recreate existing schemas.
         schemas = {}
         for k, v in data.items():
             if isinstance(v, dict):   # might be a schema cstruct
@@ -261,6 +240,11 @@ class CreateCorpusView(FormView):
 
         # Handle subschemas clicked buttons: perform apropriate operations
         schemas = [schemas[i] for i in sorted(schemas.keys())]
+        return schemas
+
+    def form_class(self, schema, **kwargs):
+        data = parse(self.request.POST.items())
+        schemas = self._extract_pipeline_components()
         schemas = self._apply_schema_edits(schemas, data)
         for s in schemas:
             schema.add(s)
