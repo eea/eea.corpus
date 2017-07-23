@@ -21,6 +21,7 @@ def register_pipeline_component(schema, process, title):
     * a schema that will provide the necessary parameters values for the
     ``register`` function call
     """
+
     # TODO: is it possible to avoid wrapping schema?
     name = (process.__module__ + '.' + process.__qualname__).replace('.', '_')
 
@@ -40,6 +41,37 @@ def register_pipeline_component(schema, process, title):
 
     p = Processor(name, WrappedSchema, process, title)
     pipeline_registry[name] = p
+
+
+def pipeline_component(schema, title):
+    """ Register a processing function as a pipeline component, with a schema
+    """
+
+    def wrapper(process):
+
+        name = (process.__module__ + '.' + process.__qualname__)
+        name = name.replace('.', '_')
+
+        class WrappedSchema(schema):
+            schema_type = c.SchemaNode(
+                c.String(),
+                widget=deform.widget.HiddenWidget(),
+                default=name,
+                missing=name,
+            )
+            schema_position = c.SchemaNode(
+                c.Int(),
+                widget=deform.widget.HiddenWidget(),
+                default=-1,
+                missing=-1,
+            )
+
+        p = Processor(name, WrappedSchema, process, title)
+        pipeline_registry[name] = p
+
+        return process
+
+    return wrapper
 
 
 def build_pipeline(file_name, text_column, pipeline):

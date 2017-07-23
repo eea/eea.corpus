@@ -95,3 +95,4 @@ local/
 model.saved
 pip-selfcheck.json
 share/
+*~
