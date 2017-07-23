@@ -1,0 +1,31 @@
+version: "2"
+
+services:
+
+  shell:
+    build: .
+    command: sh -c "tail -f /dev/null"
+    ports:
+      - "6543:6543"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./src:/src
+      - corpus-data:/corpus
+      # - ./corpus:/corpus
+
+  redis:
+    image: redis
+
+  debugworker:
+      build: .
+      command: sh -c "python setup.py develop && worker development.ini"
+      environment:
+        - REDIS_URL=redis://redis:6379/0
+      volumes:
+        - ./src:/src
+        - corpus-data:/corpus
+        # - ./corpus:/corpus
+
+volumes:
+  corpus-data:

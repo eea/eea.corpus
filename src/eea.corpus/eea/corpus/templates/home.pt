@@ -1,0 +1,51 @@
+<div metal:use-macro="load: layout.pt">
+  <div metal:fill-slot="content">
+
+    <div class="content">
+      <h1>
+        <span class="font-semi-bold">EEA</span>
+        <span class="smaller">Corpus Server</span>
+      </h1>
+
+      <p class="lead">A ML based <span class="font-normal">topic modeling</span> tool.</p>
+
+      <div tal:repeat="doc documents">
+
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <a href="/process/${doc.name}/" class="btn btn-primary pull-right">
+              <span class="glyphicon glyphicon-cog"></span>
+              Create a new corpus
+            </a>
+            <h3>${doc.title}</h3>
+          </div>
+          <div class="panel-body" tal:condition="doc.corpuses">
+            <ul class="list-group" >
+              <li class="list-group-item" tal:repeat="corpus doc.corpuses">
+                <form method="POST" class="pull-right"
+                                    action="/delete/${doc.name}/${corpus[0]}">
+                  <button class="btn btn-secondary" >
+                    <span class="glyphicon glyphicon-trash"></span>
+                  </button>
+                </form>
+                <div role="group">
+                  <a href="/view/${doc.name}/${corpus[0]}" >
+                  <h4>
+                    ${corpus[1]['title']}
+                  </h4>
+                  </a>
+                  <small>${corpus[1].get('created')}</small>
+                  <p class="discreet">
+                  ${corpus[1]['description']}
+                  </p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,3 @@
+[run]
+source = eea_corpus
+omit = eea_corpus/test*

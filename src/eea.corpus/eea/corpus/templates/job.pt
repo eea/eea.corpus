@@ -1,0 +1,40 @@
+<div metal:use-macro="load: layout.pt">
+
+  <div metal:fill-slot="sidebar">
+  </div>
+
+  <div metal:fill-slot="content">
+    <div class="content">
+      <div tal:condition="job">
+        <h4>Job id ${job.id}</h4>
+        <p class="discreet">
+        Created: ${job.created_at}<br/>
+        </p>
+        <p>
+        <strong>Status</strong>
+        ${job._status}
+        </p>
+
+        <div tal:condition="job.exc_info">
+          <h5>Execution info</h5>
+          <pre>
+<code>
+${job.exc_info}
+</code>
+          </pre>
+        </div>
+
+        <p tal:condition="job._status not in ['finished', 'failed']">
+        Please reload page to view updated async job status
+        </p>
+        <p tal:condition="job._status == 'finished'">
+        <a href="/view/${request.matchdict.doc}/${request.matchdict.corpus}">View corpus</a>
+        </p>
+      </div>
+      <div tal:condition="not job">
+        Job not found
+      </div>
+    </div>
+  </div>
+</div>
+

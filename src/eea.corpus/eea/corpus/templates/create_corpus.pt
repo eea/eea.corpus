@@ -1,0 +1,38 @@
+<div metal:use-macro="load: layout.pt">
+
+  <div metal:fill-slot="sidebar-top"></div>
+  <div metal:fill-slot="sidebar"></div>
+
+  <div metal:fill-slot="full-width">
+    <div class="row">
+      <div class="col-md-12">
+        <h1>Create a new corpus for ${view.document}</h1>
+        <p>Add necessary processing pipeline components. The pipeline is
+        processed in top-to-bottom in their order here.
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+
+      <div class="col-md-5">
+        <form tal:replace="structure form" ></form>
+      </div>
+
+      <div class="col-md-7">
+        <div class="content">
+          <h4>Preview result</h4>
+          <p>Choose row and processing settings to preview results</p>
+
+          <div class="panel panel-default" tal:repeat="row view.preview">
+            <div class="panel-body">
+              ${row}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

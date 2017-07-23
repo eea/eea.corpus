@@ -1,0 +1,60 @@
+<!DOCTYPE html metal:define-macro="layout">
+<html lang="{{request.locale_name}}">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="pyramid web application">
+    <meta name="author" content="Pylons Project">
+    <link rel="shortcut icon" href="${request.static_url('eea.corpus:static/pyramid-16x16.png')}">
+
+    <title>EEA Corpus Server</title>
+
+    <link href="//oss.maxcdn.com/libs/twitter-bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+    <link href="${request.static_url('eea.corpus:static/theme.css')}" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="//oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js" integrity="sha384-0s5Pv64cNZJieYFkXYOTId2HMA2Lfb6q2nAcx2n0RTLUnCAoTTsS0nKEO27XyKcY" crossorigin="anonymous"></script>
+      <script src="//oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js" integrity="sha384-f1r2UzjsxZ9T4V1f2zBO/evUqSEOpeaUUZcMTz1Up63bl4ruYnFYeM+BxI4NhyI0" crossorigin="anonymous"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <div class="starter-template">
+      <div class="container-bs">
+        <div class="row">
+
+          <div class="col-md-12" tal:define="messages request.session.pop_flash()">
+            <div tal:condition="messages">
+              <div tal:repeat="msg messages" class="alert alert-warning alert-dismissible fade in" role="alert">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                  <span aria-hidden="true" class="glyphicon glyphicon-remove"></span>
+                </button>
+                ${msg}
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div metal:define-slot="sidebar-top">
+              <p>
+              <a class="btn primary" href="/"><i class="glyphicon glyphicon-home"></i> Home</a>
+              <a class="btn secondary" href="/upload"><i class="glyphicon glyphicon-cloud-upload"></i> Upload a new file</a>
+              </p>
+            </div>
+            <div metal:define-slot="sidebar"></div>
+          </div>
+          <div class="col-md-9">
+            <div metal:define-slot="content"></div>
+          </div>
+        </div>
+        <div metal:define-slot="full-width"></div>
+      </div>
+    </div>
+
+    <script src="//oss.maxcdn.com/libs/jquery/1.10.2/jquery.min.js" integrity="sha384-aBL3Lzi6c9LNDGvpHkZrrm3ZVsIwohDD7CDozL0pk8FwCrfmV7H9w8j3L7ikEv6h" crossorigin="anonymous"></script>
+    <script src="//oss.maxcdn.com/libs/twitter-bootstrap/3.0.3/js/bootstrap.min.js" integrity="sha384-s1ITto93iSMDxlp/79qhWHi+LsIi9Gx6yL+cOKDuymvihkfol83TYbLbOw+W/wv4" crossorigin="anonymous"></script>
+  </body>
+</html>

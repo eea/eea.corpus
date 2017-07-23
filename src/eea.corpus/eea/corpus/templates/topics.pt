@@ -1,0 +1,26 @@
+<div metal:use-macro="load: layout.pt">
+
+  <div metal:fill-slot="sidebar">
+    <form tal:replace="structure form" ></form>
+  </div>
+
+  <div metal:fill-slot="content">
+    <div class="content" tal:define="m view.metadata(); vis view.vis">
+      <!-- <div class="pull&#45;right"> -->
+      <!--   <form method="GET" action="/process/${request.matchdict.get('name')}/"> -->
+      <!--     <button class="btn btn&#45;tertiary"> -->
+      <!--       <span class="glyphicon glyphicon&#45;cog"></span> Reprocess corpus -->
+      <!--     </button> -->
+      <!--   </form> -->
+      <!-- </div> -->
+      <h2>${request.matchdict.get('doc')}</h2>
+      <div tal:condition="m">
+        <p>
+        A corpus of ${m.docs} documents, ${m.sentences} sentences and
+        ${m.tokens} tokens in language '${m.lang}'.
+        </p>
+      </div>
+      <div tal:condition="vis" tal:replace="structure vis"></div>
+    </div>
+  </div>
+</div>

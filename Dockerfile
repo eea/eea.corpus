@@ -27,7 +27,8 @@ RUN pip --no-cache-dir install \
         cld2-cffi \
         pyldavis \
         phrasemachine \
-        textacy
+        textacy \
+        wordcloud
 
 # # convert phrasemachine to python3 code
 RUN cd /usr/local/lib/python3.5/site-packages/phrasemachine \
@@ -35,8 +36,21 @@ RUN cd /usr/local/lib/python3.5/site-packages/phrasemachine \
 
 RUN python -m spacy.en.download all
 
-COPY corpus /corpus
+RUN pip --no-cache-dir install \
+        gensim
 
-WORKDIR /corpus
+# COPY corpus /corpus
+RUN mkdir /corpus
 
-EXPOSE 8888
+ADD ./src /src
+
+# RUN pip install -r /src/eea.corpus/requirements.txt
+
+RUN cd /src/eea.corpus \
+      && python setup.py develop
+
+WORKDIR /src/eea.corpus
+
+CMD python setup.py develop && pserve /src/eea.corpus/development.ini
+
+EXPOSE 6543
