@@ -29,8 +29,6 @@ def process(content, **settings):
 
     """
 
-    import pdb; pdb.set_trace()
-
     # First we need to identify collocations
     for doc in content:
         try:
@@ -44,12 +42,3 @@ def process(content, **settings):
             continue
 
         yield clean
-#
-#
-# def includeme(config):
-#     register_pipeline_component(
-#         schema=CollocationsFinder,
-#         process=process,
-#         title="Find and process collocations"
-#     )
-#

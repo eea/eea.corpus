@@ -3,7 +3,7 @@
 
 from bs4 import BeautifulSoup
 from colander import Schema
-from eea.corpus.processing import register_pipeline_component
+from eea.corpus.processing import pipeline_component
 import logging
 
 logger = logging.getLogger('eea.corpus')
@@ -15,6 +15,8 @@ class BeautifulSoupText(Schema):
     description = "Strips HTML tags, leaving only plain text."
 
 
+@pipeline_component(schema=BeautifulSoupText,
+                    title="Strip tags with BeautifulSoup")
 def process(content, **settings):
     for doc in content:
         try:
@@ -28,11 +30,3 @@ def process(content, **settings):
             continue
 
         yield clean
-
-
-def includeme(config):
-    register_pipeline_component(
-        schema=BeautifulSoupText,
-        process=process,
-        title="Strip tags with BeautifulSoup"
-    )

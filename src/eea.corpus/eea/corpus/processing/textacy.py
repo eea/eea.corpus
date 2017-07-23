@@ -1,5 +1,5 @@
 from colander import Schema, SchemaNode, Bool
-from eea.corpus.processing import register_pipeline_component
+from eea.corpus.processing import pipeline_component
 from textacy.preprocess import preprocess_text
 import logging
 
@@ -90,6 +90,10 @@ class TextacyPreprocess(Schema):
     )
 
 
+@pipeline_component(
+    schema=TextacyPreprocess,
+    title="Textacy Preprocessing"
+)
 def process(content, **settings):
     for doc in content:
         try:
@@ -100,11 +104,3 @@ def process(content, **settings):
                 doc
             )
             continue
-
-
-def includeme(config):
-    register_pipeline_component(
-        schema=TextacyPreprocess,
-        process=process,
-        title="Textacy Preprocessing"
-    )

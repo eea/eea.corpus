@@ -2,7 +2,7 @@
 """
 
 from colander import Schema, Int, SchemaNode
-from eea.corpus.processing import register_pipeline_component
+from eea.corpus.processing import pipeline_component
 import logging
 
 logger = logging.getLogger('eea.corpus')
@@ -21,6 +21,8 @@ class LimitResults(Schema):
     )
 
 
+@pipeline_component(schema=LimitResults,
+                    title="Limit number of results")
 def process(content, **settings):
     count = settings.get('max_count', 0)
     i = 0
@@ -33,11 +35,3 @@ def process(content, **settings):
             if i > count:
                 break
             yield doc
-
-
-def includeme(config):
-    register_pipeline_component(
-        schema=LimitResults,
-        process=process,
-        title="Limit number of results"
-    )

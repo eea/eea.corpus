@@ -3,6 +3,7 @@ from eea.corpus.utils import upload_location
 import colander as c
 import deform
 import pandas as pd
+import venusian
 
 
 # container for registered pipeline components
@@ -11,8 +12,8 @@ pipeline_registry = OrderedDict()
 Processor = namedtuple('Processor', ['name', 'klass', 'process', 'title'])
 
 
-def register_pipeline_component(schema, process, title):
-    """ Call this to register a new pipeline component.
+def pipeline_component(schema, title):
+    """ Register a processing function as a pipeline component, with a schema
 
     A pipeline component is two pieces:
 
@@ -20,58 +21,70 @@ def register_pipeline_component(schema, process, title):
     transformation on the input content.
     * a schema that will provide the necessary parameters values for the
     ``register`` function call
+
+    Use such as:
+
+        class SomeSettingsSchema(colander.Schema):
+            count = colander.SchemaNode(colander.Int)
+
+        @pipeline_component(schema=SomeSettingsSchema, title='Generic Pipe')
+        def process(content, **settings):
+            for doc in content:
+                # do something
+                yield doc
+
     """
 
-    # TODO: is it possible to avoid wrapping schema?
-    name = (process.__module__ + '.' + process.__qualname__).replace('.', '_')
+    # This outer function works as a factory for the decorator, to be able to
+    # have a closure with parameters for the decorator. The function below is
+    # the real decorator
 
-    class WrappedSchema(schema):
-        schema_type = c.SchemaNode(
-            c.String(),
-            widget=deform.widget.HiddenWidget(),
-            default=name,
-            missing=name,
-        )
-        schema_position = c.SchemaNode(
-            c.Int(),
-            widget=deform.widget.HiddenWidget(),
-            default=-1,
-            missing=-1,
-        )
+    # The trick of the venusian library is that the decorator, by default,
+    # doesn't do anything. It just returns the decorated function. But we
+    # register a callback for the venusian scanning process that, once the
+    # 'scanning' process is completed (or, rather, the full application is in
+    # use), the decorator will start doing what's inside the callback.
+    #
+    # For the simplified decorator, we just embellish the schema with the
+    # required machinery fields, then act as a pass through for the original
+    # function
 
-    p = Processor(name, WrappedSchema, process, title)
-    pipeline_registry[name] = p
+    # TODO: do we really need full venusian to be able to benefit from scan?
+    # TODO; can we simplify the schema wrapping process? Inheriance with
+    # a "hidden" class seems overkill, but also we don't want to modify, "in
+    # place" the original schema, because that can be reused.
 
+    def decorator(process):
 
-def pipeline_component(schema, title):
-    """ Register a processing function as a pipeline component, with a schema
-    """
+        def callback(scanner, name, func):
+            print(scanner, name, func)
 
-    def wrapper(process):
+            name = '_'.join((func.__module__, name)).replace('.', '_')
 
-        name = (process.__module__ + '.' + process.__qualname__)
-        name = name.replace('.', '_')
+            class WrappedSchema(schema):
+                schema_type = c.SchemaNode(
+                    c.String(),
+                    widget=deform.widget.HiddenWidget(),
+                    default=name,
+                    missing=name,
+                )
+                schema_position = c.SchemaNode(
+                    c.Int(),
+                    widget=deform.widget.HiddenWidget(),
+                    default=-1,
+                    missing=-1,
+                )
 
-        class WrappedSchema(schema):
-            schema_type = c.SchemaNode(
-                c.String(),
-                widget=deform.widget.HiddenWidget(),
-                default=name,
-                missing=name,
-            )
-            schema_position = c.SchemaNode(
-                c.Int(),
-                widget=deform.widget.HiddenWidget(),
-                default=-1,
-                missing=-1,
-            )
+            p = Processor(name, WrappedSchema, func, title)
+            pipeline_registry[name] = p
+            print('Registered', p)
 
-        p = Processor(name, WrappedSchema, process, title)
-        pipeline_registry[name] = p
+            return func
 
+        venusian.attach(process, callback)
         return process
 
-    return wrapper
+    return decorator
 
 
 def build_pipeline(file_name, text_column, pipeline):
