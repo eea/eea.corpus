@@ -2,14 +2,16 @@ from collections import namedtuple, OrderedDict
 from eea.corpus.utils import upload_location
 import colander as c
 import deform
+import functools
 import pandas as pd
+from textacy.doc import Doc
 import venusian
 
 
 # container for registered pipeline components
 pipeline_registry = OrderedDict()
 
-Processor = namedtuple('Processor', ['name', 'klass', 'process', 'title'])
+Processor = namedtuple('Processor', ['name', 'schema', 'process', 'title'])
 
 
 def pipeline_component(schema, title):
@@ -55,18 +57,17 @@ def pipeline_component(schema, title):
     # place" the original schema, because that can be reused.
 
     def decorator(process):
+        uid = '_'.join((process.__module__,
+                        process.__name__)).replace('.', '_')
 
         def callback(scanner, name, func):
-            print(scanner, name, func)
-
-            name = '_'.join((func.__module__, name)).replace('.', '_')
 
             class WrappedSchema(schema):
                 schema_type = c.SchemaNode(
                     c.String(),
                     widget=deform.widget.HiddenWidget(),
-                    default=name,
-                    missing=name,
+                    default=uid,
+                    missing=uid,
                 )
                 schema_position = c.SchemaNode(
                     c.Int(),
@@ -75,9 +76,8 @@ def pipeline_component(schema, title):
                     missing=-1,
                 )
 
-            p = Processor(name, WrappedSchema, func, title)
-            pipeline_registry[name] = p
-            print('Registered', p)
+            p = Processor(uid, WrappedSchema, func, title)
+            pipeline_registry[uid] = p
 
             return func
 
@@ -114,3 +114,50 @@ def build_pipeline(file_name, text_column, pipeline):
         content_stream = process(content_stream, **kwargs)
 
     return content_stream
+
+
+def needs_textacy_docs_input(func):
+    """ A decorator to make sure input stream comes as textacy.Doc objs
+
+    Example:
+
+    @needs_textacy_docs
+    def process(content, **settings):
+        for doc in content:
+            for token in doc:
+                print(token)
+    """
+
+    @functools.wraps(func)
+    def wrapper(content, **settings):
+        for doc in content:
+            if not isinstance(doc, Doc):
+                yield next(func([Doc(doc)], **settings))
+                continue
+
+            yield next(func([doc], **settings))
+
+    return wrapper
+
+
+def needs_text_input(func):
+    """ A decorator to make sure input stream comes as plain strings
+
+    Example:
+
+    @needs_text_input
+    def process(content, **settings):
+        for doc in content:
+            print(doc)
+    """
+
+    @functools.wraps(func)
+    def wrapper(content, **settings):
+        for doc in content:
+            if isinstance(doc, Doc):
+                yield next(func([doc.text], **settings))
+                continue
+
+            yield next(func([doc], **settings))
+
+    return wrapper

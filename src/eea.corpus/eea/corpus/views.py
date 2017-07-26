@@ -225,7 +225,7 @@ class CreateCorpusView(FormView):
         raise exc.HTTPFound('/view/%s/%s/job/%s' %
                             (self.document, corpus_id, job.id))
 
-    def _extract_pipeline_components(self):
+    def _extract_pipeline_schemas(self):
         data = parse(self.request.POST.items())
         schemas = {}
         for k, v in data.items():
@@ -233,8 +233,8 @@ class CreateCorpusView(FormView):
                 _type = v.pop('schema_type', None)
                 if _type is not None:       # yeap, a schema
                     p = pipeline_registry[_type]
-                    s = p.klass(name=k, title=p.title,
-                                renderer=deform_renderer)
+                    s = p.schema(name=k, title=p.title,
+                                 renderer=deform_renderer)
                     pos = v.pop('schema_position')
                     schemas[pos] = s
 
@@ -244,7 +244,7 @@ class CreateCorpusView(FormView):
 
     def form_class(self, schema, **kwargs):
         data = parse(self.request.POST.items())
-        schemas = self._extract_pipeline_components()
+        schemas = self._extract_pipeline_schemas()
         schemas = self._apply_schema_edits(schemas, data)
         for s in schemas:
             schema.add(s)
@@ -311,7 +311,7 @@ class CreateCorpusView(FormView):
         add_component = appstruct.get('pipeline_components')
         if add_component:
             p = pipeline_registry[add_component]
-            s = p.klass(name=rand(10), title=p.title)
+            s = p.schema(name=rand(10), title=p.title)
             f = s['schema_position']
             f.default = f.missing = len(schema.children)
             schema.add(s)

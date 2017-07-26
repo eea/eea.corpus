@@ -97,7 +97,8 @@ class TextacyPreprocess(Schema):
 def process(content, **settings):
     for doc in content:
         try:
-            yield preprocess_text(doc, **settings)
+            text = preprocess_text(doc, **settings)
+            yield text
         except Exception:
             logger.exception(
                 "Textacy Processor: got an error in extracting content: %r",

@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
-# https://github.com/chartbeat-labs/textacy
-# make sure you have downloaded the language model
-# $ python -m spacy.en.download all
-
-# from eea.corpus import vis
 from __future__ import print_function
 from io import StringIO
 from pyLDAvis import save_html
@@ -28,38 +20,15 @@ def build_model(corpus, topics, num_docs=None, min_df=0.1, max_df=0.7):
     )
 
     vectorizer = Vectorizer(
-        weighting='tfidf',
+        weighting='tfidf',      # TODO: is this weighting correct?
         normalize=False, smooth_idf=False, min_df=min_df, max_df=max_df,
         max_n_terms=100000
     )
     doc_term_matrix = vectorizer.fit_transform(docs)
 
-    print('DTM: ', repr(doc_term_matrix))
-
-    # Train and interpret a topic model:
+    # TODO: support other gensim models
     model = textacy.tm.TopicModel('lda', n_topics=topics)
     model.fit(doc_term_matrix)
-
-    # Transform the corpus and interpret our model:
-    doc_topic_matrix = model.transform(doc_term_matrix)
-
-    print('DocTopicMatrix shape', doc_topic_matrix.shape)
-
-    # print('Discovered topics:')
-    # for topic_idx, top_terms in model.top_topic_terms(id2term, top_n=10):
-    #     print('topic', topic_idx, ':', '   '.join(top_terms))
-
-    # Show top 2 doc within first 2 topics
-    # top_topic_docs = model.top_topic_docs(
-    #     doc_topic_matrix,
-    #     topics=[0, 1],
-    #     top_n=2
-    # )
-    # for (topic_idx, top_docs) in top_topic_docs:
-    #     print(topic_idx)
-    #     for j in top_docs:
-    #         print(corpus[j].metadata[8])
-    #         print(corpus[j])
 
     return model, doc_term_matrix, vectorizer
 
