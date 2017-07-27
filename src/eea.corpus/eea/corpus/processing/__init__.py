@@ -116,23 +116,28 @@ def build_pipeline(file_name, text_column, pipeline):
     return content_stream
 
 
-def needs_textacy_docs_input(func):
+def needs_tokenized_input(func):
     """ A decorator to make sure input stream comes as textacy.Doc objs
 
     Example:
 
-    @needs_textacy_docs
+    @needs_tokenized_input
     def process(content, **settings):
         for doc in content:
             for token in doc:
                 print(token)
+
+    # TODO: refactor as a list of convertors that can be passed to processing
+    # functions?
     """
 
     @functools.wraps(func)
     def wrapper(content, **settings):
         for doc in content:
-            if not isinstance(doc, Doc):
-                yield next(func([Doc(doc)], **settings))
+            if isinstance(doc, str):       # doc is list of sentences
+                # tokenize using textacy
+                # TODO: compare performance, nltk punkt
+                yield next(func([Doc(doc).tokenized_text], **settings))
                 continue
 
             yield next(func([doc], **settings))
@@ -150,6 +155,8 @@ def needs_text_input(func):
         for doc in content:
             print(doc)
     """
+
+    # TODO: test if content stream yields list of sentences. Convert to text
 
     @functools.wraps(func)
     def wrapper(content, **settings):

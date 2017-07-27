@@ -17,7 +17,6 @@ class BeautifulSoupText(Schema):
 
 @pipeline_component(schema=BeautifulSoupText,
                     title="Strip tags with BeautifulSoup")
-@needs_text_input
 def process(content, **settings):
     for doc in content:
         try:
