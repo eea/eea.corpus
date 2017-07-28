@@ -294,6 +294,7 @@ class CreateCorpusView(FormView):
 
     def show(self, form):
         # re-validate form, it is possible to be changed
+        # import pdb; pdb.set_trace()
         appstruct = {}
         controls = list(self.request.POST.items())
         if controls:

@@ -26,24 +26,23 @@ def process(content, **settings):
     * append the collocations to the document
     * replace the collocations where they appear
 
+    TODO: implement the above
     """
 
-    # from itertools import tee
-    # cs, ps = tee(content, 2)
+    from itertools import tee, chain
 
-    phrases = Phrases()     # TODO: pass settings here
-    i = 0
-    for doc in content:
-        if isinstance(doc, str):
-            doc = Doc(doc)
+    content = (isinstance(doc, str) and Doc(doc) or doc for doc in content)
+    content = (doc for doc in content if doc.lang == 'en')
 
-        if doc.lang != 'en':
-            continue
+    cs, ps = tee(content, 2)
 
-        print(i)
-        i += 1
-        phrases.learn_vocab(doc.tokenized_text, 40000000)
+    ps = chain.from_iterable(doc.tokenized_text for doc in ps)
 
-    import pdb; pdb.set_trace()
+    phrases = Phrases(ps)     # TODO: pass settings here
+
+    # phrases.learn_vocab(doc.tokenized_text, 40000000)
+
+    # import pdb; pdb.set_trace()
     for doc in cs:
-        yield doc
+        for sentence in phrases[doc.tokenized_text]:
+            yield sentence
