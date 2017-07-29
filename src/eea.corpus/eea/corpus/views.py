@@ -21,6 +21,7 @@ from eea.corpus.utils import extract_corpus_id
 from eea.corpus.utils import get_corpus
 from eea.corpus.utils import metadata
 from eea.corpus.utils import upload_location
+from itertools import islice
 from peppercorn import parse
 from pkg_resources import resource_filename
 from pyramid.httpexceptions import HTTPFound
@@ -149,6 +150,15 @@ def schema_defaults(schema):
     return res
 
 
+def reordered(ss):
+    """ Utility method to set incremental values to the schema_position fields
+    """
+    for i, s in enumerate(ss):
+        f = s['schema_position']
+        f.default = f.missing = i
+    return ss
+
+
 @view_config(
     route_name="process_csv",
     renderer="templates/create_corpus.pt"
@@ -170,6 +180,7 @@ class CreateCorpusView(FormView):
         return document_name(self.request)
 
     def generate_corpus_id(self, appstruct):
+        # same options will generate the same corpus id
         m = hashlib.sha224()
         for kv in sorted(appstruct.items()):
             m.update(str(kv).encode('ascii'))
@@ -260,12 +271,6 @@ class CreateCorpusView(FormView):
         # assume the schemas have a contigous range of schema_position values
         # assume schemas are properly ordered
 
-        def reordered(ss):
-            for i, s in enumerate(ss):
-                f = s['schema_position']
-                f.default = f.missing = i
-            return ss
-
         for i, s in enumerate(schemas):
 
             if "remove_%s_success" % s.name in data:
@@ -294,16 +299,12 @@ class CreateCorpusView(FormView):
 
     def show(self, form):
         # re-validate form, it is possible to be changed
-        # import pdb; pdb.set_trace()
         appstruct = {}
         controls = list(self.request.POST.items())
         if controls:
-            print('have controls')
-
             try:
                 appstruct = form.validate(controls)
             except deform.exception.ValidationFailure as e:
-                print('failure, returning failure')
                 return self.failure(e)
 
         schema = form.schema
@@ -350,15 +351,7 @@ class CreateCorpusView(FormView):
                 self.document, appstruct['column'], pipeline
             )
 
-            res = []
-            for i in range(self.preview_size):
-                try:
-                    c = next(content_stream)
-                except StopIteration:
-                    break
-                res.append(c)
-
-            self.preview = res
+            self.preview = islice(content_stream, 0, self.preview_size)
 
         return {
             'form': form.render(appstruct),
