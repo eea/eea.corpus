@@ -23,7 +23,7 @@ class LimitResults(Schema):
 
 @pipeline_component(schema=LimitResults,
                     title="Limit number of results")
-def process(content, **settings):
+def process(content, env, **settings):
     count = settings.get('max_count', 0)
     i = 0
     if not count:

@@ -94,7 +94,7 @@ class TextacyPreprocess(Schema):
     schema=TextacyPreprocess,
     title="Textacy Preprocessing"
 )
-def process(content, **settings):
+def process(content, env, **settings):
     for doc in content:
         try:
             text = preprocess_text(doc, **settings)

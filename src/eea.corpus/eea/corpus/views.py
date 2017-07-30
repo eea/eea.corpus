@@ -212,10 +212,6 @@ class CreateCorpusView(FormView):
 
         return [schemas[k] for k in sorted(schemas.keys())]
 
-    def preview_success(self, appstruct):
-        # no action needed, it's done by show()
-        return
-
     def generate_corpus_success(self, appstruct):
         pipeline = self.get_pipeline_components()
 
@@ -265,6 +261,7 @@ class CreateCorpusView(FormView):
         schema.add(w)
 
         self.form = Form(schema, renderer=deform_renderer, **kwargs)
+        print(self.form.buttons)
         return self.form
 
     def _apply_schema_edits(self, schemas, data):
@@ -348,7 +345,7 @@ class CreateCorpusView(FormView):
 
             print(pipeline)
             content_stream = build_pipeline(
-                self.document, appstruct['column'], pipeline
+                self.document, appstruct['column'], pipeline, preview_mode=True
             )
 
             self.preview = islice(content_stream, 0, self.preview_size)

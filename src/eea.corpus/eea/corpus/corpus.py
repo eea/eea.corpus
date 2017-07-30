@@ -39,7 +39,8 @@ def build_corpus(pipeline, corpus_id, file_name, text_column, **kw):
     cpath = corpus_base_path(file_name)      # corpus_id
     logger.info('Creating corpus for %s at %s', file_name, cpath)
 
-    content_stream = build_pipeline(file_name, text_column, pipeline)
+    content_stream = build_pipeline(file_name, text_column, pipeline,
+                                    preview_mode=False)
 
     # TODO: save metadata stream
     corpus = textacy.Corpus('en', texts=content_stream)

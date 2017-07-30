@@ -1,10 +1,10 @@
 from collections import namedtuple, OrderedDict
 from eea.corpus.utils import upload_location
+from textacy.doc import Doc
 import colander as c
 import deform
 import functools
 import pandas as pd
-from textacy.doc import Doc
 import venusian
 
 
@@ -87,7 +87,7 @@ def pipeline_component(schema, title):
     return decorator
 
 
-def build_pipeline(file_name, text_column, pipeline):
+def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
     """ Runs file through pipeline and returns result
 
     A pipeline component:
@@ -108,10 +108,17 @@ def build_pipeline(file_name, text_column, pipeline):
     df = pd.read_csv(document_path)
     content_stream = df[text_column].__iter__()
 
+    env = {
+        'file_name': file_name,
+        'text_column': text_column,
+        'pipeline': pipeline,
+        'preview_mode': preview_mode
+    }
+
     for component_name, kwargs in pipeline:
         component = pipeline_registry[component_name]
         process = component.process
-        content_stream = process(content_stream, **kwargs)
+        content_stream = process(content_stream, env, **kwargs)
 
     return content_stream
 

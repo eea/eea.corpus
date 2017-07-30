@@ -17,7 +17,7 @@ class BeautifulSoupText(Schema):
 
 @pipeline_component(schema=BeautifulSoupText,
                     title="Strip tags with BeautifulSoup")
-def process(content, **settings):
+def process(content, env, **settings):
     for doc in content:
         try:
             soup = BeautifulSoup(doc, 'html.parser')

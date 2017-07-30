@@ -19,7 +19,7 @@ class PhraseFinder(Schema):
 
 @pipeline_component(schema=PhraseFinder,
                     title="Find and process phrases")
-def process(content, **settings):
+def process(content, env, **settings):       # pipeline, preview_mode,
     """ We can run in several modes:
 
     * remove all text but leave the phrases tokens

@@ -1,4 +1,3 @@
-# from pyramid.paster import setup_logging
 from pyramid.paster import bootstrap
 from redis import Redis
 from rq import Queue, Worker, Connection
@@ -27,10 +26,16 @@ queue = make_queue()
 @click.command()
 @click.argument('config_uri')
 def worker(config_uri):
+    """ Console entry script that starts a worker process
+    """
     # TODO: import spacy's model to share it between workers
+
     pyramid_env = bootstrap(config_uri)
+
     # Setup logging to allow log output from command methods
+    # from pyramid.paster import setup_logging
     # setup_logging(config_uri)
+
     try:
         qs = ['default']
         conn = redis_connection()
