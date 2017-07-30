@@ -11,10 +11,11 @@ import venusian
 # container for registered pipeline components
 pipeline_registry = OrderedDict()
 
-Processor = namedtuple('Processor', ['name', 'schema', 'process', 'title'])
+Processor = namedtuple('Processor',
+                       ['name', 'schema', 'process', 'title', 'actions'])
 
 
-def pipeline_component(schema, title):
+def pipeline_component(schema, title, actions=None):
     """ Register a processing function as a pipeline component, with a schema
 
     A pipeline component is two pieces:
@@ -24,12 +25,18 @@ def pipeline_component(schema, title):
     * a schema that will provide the necessary parameters values for the
     ``register`` function call
 
+    Additionally, an ``actions`` mapping can be passed, where the keys are
+    button names and the values are functions that will handle requests. They
+    can be used to handle special cases that can't be foreseen by the main form
+    views.
+
     Use such as:
 
         class SomeSettingsSchema(colander.Schema):
             count = colander.SchemaNode(colander.Int)
 
-        @pipeline_component(schema=SomeSettingsSchema, title='Generic Pipe')
+        @pipeline_component(schema=SomeSettingsSchema, title='Generic Pipe',
+                            actions={'handle_': handle})
         def process(content, **settings):
             for doc in content:
                 # do something
@@ -76,7 +83,7 @@ def pipeline_component(schema, title):
                     missing=-1,
                 )
 
-            p = Processor(uid, WrappedSchema, func, title)
+            p = Processor(uid, WrappedSchema, func, title, actions=[])
             pipeline_registry[uid] = p
 
             return func
@@ -101,8 +108,6 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
 
     The yielded content can be statements, documents, etc.
 
-    # TODO: do we need line_count here, to hint to the processor that we don't
-    # want full content?
     """
     document_path = upload_location(file_name)
     df = pd.read_csv(document_path)
@@ -112,10 +117,15 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
         'file_name': file_name,
         'text_column': text_column,
         'pipeline': pipeline,
-        'preview_mode': preview_mode
+        # Position in pipeline. Allows the processing functions to reconstitute
+        # the previous pipeline steps
+        'position': 0,
+        # True if the pipeline is being previewed
+        'preview_mode': preview_mode,
     }
 
-    for component_name, kwargs in pipeline:
+    for i, (component_name, kwargs) in enumerate(pipeline):
+        env['position'] = i
         component = pipeline_registry[component_name]
         process = component.process
         content_stream = process(content_stream, env, **kwargs)

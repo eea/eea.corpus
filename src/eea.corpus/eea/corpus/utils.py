@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from collections import defaultdict
+import hashlib
 import json
 import logging
 import os
@@ -202,3 +203,16 @@ def document_name(request):
         raise ValueError("Not a valid document: %s" % doc)
 
     return doc
+
+
+def hashed_id(items):
+    """ Generate a short id based on a list of items.
+
+    The items should be in a stable, "hashable" form:
+        - dictionaries should be converted to tuples (k, v) and sorted
+    """
+    # same options will generate the same corpus id
+    m = hashlib.sha224()
+    for kv in items:
+        m.update(str(kv).encode('ascii'))
+    return m.hexdigest()

@@ -19,6 +19,7 @@ from eea.corpus.utils import delete_corpus
 from eea.corpus.utils import document_name
 from eea.corpus.utils import extract_corpus_id
 from eea.corpus.utils import get_corpus
+from eea.corpus.utils import hashed_id
 from eea.corpus.utils import metadata
 from eea.corpus.utils import upload_location
 from itertools import islice
@@ -29,7 +30,6 @@ from pyramid.renderers import render
 from pyramid.view import view_config
 from pyramid_deform import FormView
 import deform
-import hashlib
 import logging
 import pyramid.httpexceptions as exc
 import random
@@ -179,13 +179,6 @@ class CreateCorpusView(FormView):
     def document(self):
         return document_name(self.request)
 
-    def generate_corpus_id(self, appstruct):
-        # same options will generate the same corpus id
-        m = hashlib.sha224()
-        for kv in sorted(appstruct.items()):
-            m.update(str(kv).encode('ascii'))
-        return m.hexdigest()
-
     def get_pipeline_components(self):
         """ Returns a pipeline, a list of (process, arguments)
 
@@ -212,12 +205,16 @@ class CreateCorpusView(FormView):
 
         return [schemas[k] for k in sorted(schemas.keys())]
 
+    def preview_success(self, appstruct):
+        # preview is done by show()
+        pass
+
     def generate_corpus_success(self, appstruct):
         pipeline = self.get_pipeline_components()
 
         s = appstruct.copy()
         s['doc'] = self.document
-        corpus_id = self.generate_corpus_id(s)
+        corpus_id = hashed_id(sorted(s.items()))
 
         job = queue.enqueue(build_corpus,
                             timeout='1h',
@@ -322,6 +319,8 @@ class CreateCorpusView(FormView):
 
         form = Form(schema, buttons=self.buttons, renderer=deform_renderer,
                     **dict(self.form_options))
+
+        # handle processing actions, as appropriately
 
         # try to build a preview, if possible
         if appstruct.get('column'):
