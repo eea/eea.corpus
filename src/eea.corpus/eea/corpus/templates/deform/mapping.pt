@@ -34,7 +34,7 @@
         </div>
         <div class="btn-group">
           <button
-              class="btn btn-sm btn-info collapse-button"
+              class="btn btn-sm btn-secondary collapse-button"
               type="button"
               data-toggle="collapse"
               href="#collapsed-${field.schema.name}"

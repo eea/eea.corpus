@@ -78,7 +78,7 @@ def pipeline_component(schema, title, actions=None):
                 )
                 schema_position = c.SchemaNode(
                     c.Int(),
-                    widget=deform.widget.HiddenWidget(),
+                    #widget=deform.widget.HiddenWidget(),
                     default=-1,
                     missing=-1,
                 )

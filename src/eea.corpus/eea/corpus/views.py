@@ -265,7 +265,8 @@ class CreateCorpusView(FormView):
         # assume the schemas have a contigous range of schema_position values
         # assume schemas are properly ordered
 
-        for i, s in enumerate(schemas):
+        # import pdb; pdb.set_trace()
+        for i, s in enumerate(reordered(schemas)):
 
             if "remove_%s_success" % s.name in data:
                 del schemas[i]
@@ -302,6 +303,12 @@ class CreateCorpusView(FormView):
                 return self.failure(e)
 
         schema = form.schema
+        # fix schema position in appstruct, according to calculated schema
+        # positions
+        for k, v in appstruct.items():
+            if isinstance(v, dict):     # TODO: may not be correct in all cases
+                if v.get('schema_position'):
+                    v['schema_position'] = schema[k]['schema_position'].default
 
         # now add new schemas, at the end of all others
         add_component = appstruct.get('pipeline_components')
@@ -330,9 +337,8 @@ class CreateCorpusView(FormView):
                 _type = c.get('schema_type')
 
                 if _type:
-                    p = pipeline_registry[_type.default]
                     if c.name in appstruct:
-                        kw = appstruct[c.name]
+                        kw = appstruct[c.name].copy()   # assume mapping schema
                     else:
                         kw = schema_defaults(c)
 
@@ -340,6 +346,7 @@ class CreateCorpusView(FormView):
                     kw.pop('schema_position', None)
                     kw.pop('schema_type', None)
 
+                    p = pipeline_registry[_type.default]
                     pipeline.append((p.name, kw))
 
             print(pipeline)
