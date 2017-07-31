@@ -1,5 +1,5 @@
 <!DOCTYPE html metal:define-macro="layout">
-<html lang="{{request.locale_name}}">
+<html lang="${request.locale_name}">
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -11,7 +11,7 @@
     <title>EEA Corpus Server</title>
 
     <link href="//oss.maxcdn.com/libs/twitter-bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
-    <link href="${request.static_url('eea.corpus:static/theme.css')}" rel="stylesheet">
+    <link href="${request.static_url('eea.corpus:static/theme.css')}?x=3" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -23,9 +23,57 @@
   <body>
 
     <div class="starter-template">
-      <div class="container-bs">
-        <div class="row">
 
+
+      <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+          <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">EEA Corpus Server</a>
+          </div>
+          <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+<!-- class="active" -->
+              <li>
+                <a class="btn primary" href="/">
+                  <i class="glyphicon glyphicon-home"></i> Home
+                </a>
+              </li>
+              <li>
+                <a class="btn secondary" href="/upload">
+                  <i class="glyphicon glyphicon-cloud-upload"></i> Upload a new file
+                </a>
+              </li>
+
+              <!-- <li><a href="#about">About</a></li> -->
+              <!-- <li><a href="#contact">Contact</a></li> -->
+              <!-- <li class="dropdown"> -->
+              <!--   <a href="#" class="dropdown&#45;toggle" data&#45;toggle="dropdown" role="button" aria&#45;haspopup="true" aria&#45;expanded="false">Dropdown <span class="caret"></span></a> -->
+              <!--   <ul class="dropdown&#45;menu"> -->
+              <!--     <li><a href="#">Action</a></li> -->
+              <!--     <li><a href="#">Another action</a></li> -->
+              <!--     <li><a href="#">Something else here</a></li> -->
+              <!--     <li role="separator" class="divider"></li> -->
+              <!--     <li class="dropdown&#45;header">Nav header</li> -->
+              <!--     <li><a href="#">Separated link</a></li> -->
+              <!--     <li><a href="#">One more separated link</a></li> -->
+              <!--   </ul> -->
+              <!-- </li> -->
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </nav>
+
+
+
+      <div class="container-bs">
+
+        <div class="row">
           <div class="col-md-12" tal:define="messages request.session.pop_flash()">
             <div tal:condition="messages">
               <div tal:repeat="msg messages" class="alert alert-warning alert-dismissible fade in" role="alert">
@@ -40,8 +88,6 @@
           <div class="col-md-3">
             <div metal:define-slot="sidebar-top">
               <p>
-              <a class="btn primary" href="/"><i class="glyphicon glyphicon-home"></i> Home</a>
-              <a class="btn secondary" href="/upload"><i class="glyphicon glyphicon-cloud-upload"></i> Upload a new file</a>
               </p>
             </div>
             <div metal:define-slot="sidebar"></div>
@@ -50,11 +96,14 @@
             <div metal:define-slot="content"></div>
           </div>
         </div>
+
         <div metal:define-slot="full-width"></div>
+
       </div>
     </div>
 
     <script src="//oss.maxcdn.com/libs/jquery/1.10.2/jquery.min.js" integrity="sha384-aBL3Lzi6c9LNDGvpHkZrrm3ZVsIwohDD7CDozL0pk8FwCrfmV7H9w8j3L7ikEv6h" crossorigin="anonymous"></script>
     <script src="//oss.maxcdn.com/libs/twitter-bootstrap/3.0.3/js/bootstrap.min.js" integrity="sha384-s1ITto93iSMDxlp/79qhWHi+LsIi9Gx6yL+cOKDuymvihkfol83TYbLbOw+W/wv4" crossorigin="anonymous"></script>
+    <script src="${request.static_url('eea.corpus:static/scripts.js')}?x=5" ></script>
   </body>
 </html>

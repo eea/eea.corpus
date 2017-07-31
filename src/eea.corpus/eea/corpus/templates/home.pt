@@ -1,5 +1,5 @@
 <div metal:use-macro="load: layout.pt">
-  <div metal:fill-slot="content">
+  <div metal:fill-slot="full-width">
 
     <div class="content">
       <h1>

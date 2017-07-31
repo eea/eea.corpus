@@ -16,6 +16,7 @@ requires = [
     'waitress',
     'deform',
     'pyramid_deform',
+    'iso8601==0.1.11',
 ]
 
 tests_require = [

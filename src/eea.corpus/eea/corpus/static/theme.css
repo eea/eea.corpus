@@ -27,7 +27,7 @@ p {
   font-weight: 700;
 }
 .starter-template {
-  /* margin-top: 50px; */
+  /* margin-top: 150px; */
 }
 .starter-template .content {
   margin-left: 10px;
@@ -155,4 +155,10 @@ p {
 
 .container-bs {
   margin: 1em;
+  margin-top: 4em;
+}
+
+#corpus-form {
+  height: 80vh;
+  overflow: auto;
 }
