@@ -41,14 +41,14 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     file_name = env['file_name']
     text_column = env['text_column']
 
-    hid = phrase_model_id(file_name, text_column, pipeline)
-
     content = (isinstance(doc, str) and Doc(doc) or doc for doc in content)
     content = (doc for doc in content if doc.lang == 'en')
 
+    pid = phrase_model_id(file_name, text_column, pipeline)
     base_path = corpus_base_path(env['file_name'])
-    cache_path = os.path.join(base_path, '%s.phras' % hid)
+    cache_path = os.path.join(base_path, '%s.phras' % pid)
 
+    import pdb; pdb.set_trace()
     if os.path.exists(cache_path):
         phrases = Phrases()
         phrases = phrases.load(cache_path)
@@ -57,50 +57,52 @@ def process(content, env, **settings):       # pipeline, preview_mode,
         if env['preview_mode']:
             # if running in preview mode, look for an async job already doing
             # phrase model building
-            import pdb; pdb.set_trace()
             job = queue.enqueue(build_phrases,
                                 timeout='1h',
                                 args=(
                                     pipeline,
-                                    hid,
                                     file_name,
                                     text_column,
+                                    pid,
                                 ),
+                                meta={'phrase_model_id': pid},
                                 kwargs={})
             print(job.id)
+            for doc in cs:      # just pass through
+                yield doc
         else:
             cs, ps = tee(content, 2)
             ps = chain.from_iterable(doc.tokenized_text for doc in ps)
             phrases = Phrases(ps)     # TODO: pass settings here
             phrases.save(cache_path)
 
-    for doc in cs:
-        for sentence in phrases[doc.tokenized_text]:
-            yield sentence
+            for doc in cs:
+                for sentence in phrases[doc.tokenized_text]:
+                    yield sentence
 
 
 @job(queue=queue)
-def build_phrases(pipeline, corpus_id, file_name, text_column, **kw):
+def build_phrases(pipeline, file_name, text_column, **kw):
     """ Async job to build a corpus using the provided pipeline
     """
-
-    cpath = corpus_base_path(file_name)      # corpus_id
-    logger.info('Creating corpus for %s at %s', file_name, cpath)
 
     content_stream = build_pipeline(file_name, text_column, pipeline,
                                     preview_mode=False)
 
-    hid = phrase_model_id(file_name, text_column, pipeline)
+    pid = phrase_model_id(file_name, text_column, pipeline)
 
     base_path = corpus_base_path(file_name)
-    cache_path = os.path.join(base_path, '%s.phras' % hid)
+    cache_path = os.path.join(base_path, '%s.phras' % pid)
+
+    logger.info('Creating phrases at %s', cache_path)
 
     phrases = Phrases(content_stream)     # TODO: pass settings here
     phrases.save(cache_path)
 
 
 def phrase_model_id(file_name, text_column, pipeline):
-    # calculate the hash id
+    """ Calculate a hash as consistent uid based on the pipeline
+    """
     salt = [(file_name, text_column)]
     for name, settings in pipeline:
         if isinstance(settings, dict):
