@@ -10,6 +10,7 @@ from eea.corpus.utils import hashed_id
 from gensim.models.phrases import Phrases
 from itertools import tee, chain
 from rq.decorators import job
+from rq.registry import StartedJobRegistry
 from textacy.doc import Doc
 import logging
 import os.path
@@ -41,6 +42,7 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     file_name = env['file_name']
     text_column = env['text_column']
 
+    # convert content stream to textacy docs
     content = (isinstance(doc, str) and Doc(doc) or doc for doc in content)
     content = (doc for doc in content if doc.lang == 'en')
 
@@ -48,27 +50,39 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     base_path = corpus_base_path(env['file_name'])
     cache_path = os.path.join(base_path, '%s.phras' % pid)
 
-    import pdb; pdb.set_trace()
     if os.path.exists(cache_path):
         phrases = Phrases()
         phrases = phrases.load(cache_path)
         cs = content
     else:
         if env['preview_mode']:
+
             # if running in preview mode, look for an async job already doing
             # phrase model building
+
+            registry = StartedJobRegistry(queue.name, queue.connection)
+            all_job_ids = registry.get_job_ids()
+
+            if all_job_ids:
+                for jid in all_job_ids:
+                    job = queue.fetch_job()
+                    pos_pid = job.meta.get('phrase_model_id')
+                    if pos_pid == pid:
+                        for doc in content:      # just pass through
+                            yield doc
+                        raise StopIteration
+
             job = queue.enqueue(build_phrases,
                                 timeout='1h',
                                 args=(
                                     pipeline,
                                     file_name,
                                     text_column,
-                                    pid,
                                 ),
                                 meta={'phrase_model_id': pid},
                                 kwargs={})
             print(job.id)
-            for doc in cs:      # just pass through
+            for doc in content:      # just pass through
                 yield doc
         else:
             cs, ps = tee(content, 2)

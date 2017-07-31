@@ -26,7 +26,7 @@
 
           <div class="panel panel-default" tal:repeat="row view.preview">
             <div class="panel-body">
-              ${row}
+              ${row.text}
             </div>
           </div>
 

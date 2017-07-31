@@ -78,7 +78,7 @@ def pipeline_component(schema, title, actions=None):
                 )
                 schema_position = c.SchemaNode(
                     c.Int(),
-                    #widget=deform.widget.HiddenWidget(),
+                    widget=deform.widget.HiddenWidget(),
                     default=-1,
                     missing=-1,
                 )
@@ -92,6 +92,20 @@ def pipeline_component(schema, title, actions=None):
         return process
 
     return decorator
+
+
+def todoc(doc):
+    """ A function that converts any possible input type to a textacy Doc
+    """
+
+    if isinstance(doc, Doc):
+        return doc
+
+    if isinstance(doc, str):
+        return Doc(doc)
+
+    if isinstance(doc, list):
+        return Doc(" ".join(list))
 
 
 def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
@@ -129,6 +143,8 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
         component = pipeline_registry[component_name]
         process = component.process
         content_stream = process(content_stream, env, **kwargs)
+
+    content_stream = (todoc(doc) for doc in content_stream)
 
     return content_stream
 
