@@ -1,9 +1,10 @@
 from collections import namedtuple, OrderedDict
+from eea.corpus.utils import to_doc
+from eea.corpus.utils import to_text
 from eea.corpus.utils import upload_location
 from textacy.doc import Doc
 import colander as c
 import deform
-import functools
 import pandas as pd
 import venusian
 
@@ -94,20 +95,6 @@ def pipeline_component(schema, title, actions=None):
     return decorator
 
 
-def todoc(doc):
-    """ A function that converts any possible input type to a textacy Doc
-    """
-
-    if isinstance(doc, Doc):
-        return doc
-
-    if isinstance(doc, str):
-        return Doc(doc)
-
-    if isinstance(doc, list):
-        return Doc(" ".join(doc))
-
-
 def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
     """ Runs file through pipeline and returns result
 
@@ -144,60 +131,6 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
         process = component.process
         content_stream = process(content_stream, env, **kwargs)
 
-    content_stream = (todoc(doc) for doc in content_stream)
+    content_stream = (to_doc(doc) for doc in content_stream)
 
     return content_stream
-
-
-def needs_tokenized_input(func):
-    """ A decorator to make sure input stream comes as textacy.Doc objs
-
-    Example:
-
-    @needs_tokenized_input
-    def process(content, **settings):
-        for doc in content:
-            for token in doc:
-                print(token)
-
-    # TODO: refactor as a list of convertors that can be passed to processing
-    # functions?
-    """
-
-    @functools.wraps(func)
-    def wrapper(content, **settings):
-        for doc in content:
-            if isinstance(doc, str):       # doc is list of sentences
-                # tokenize using textacy
-                # TODO: compare performance, nltk punkt
-                yield next(func([Doc(doc).tokenized_text], **settings))
-                continue
-
-            yield next(func([doc], **settings))
-
-    return wrapper
-
-
-def needs_text_input(func):
-    """ A decorator to make sure input stream comes as plain strings
-
-    Example:
-
-    @needs_text_input
-    def process(content, **settings):
-        for doc in content:
-            print(doc)
-    """
-
-    # TODO: test if content stream yields list of sentences. Convert to text
-
-    @functools.wraps(func)
-    def wrapper(content, **settings):
-        for doc in content:
-            if isinstance(doc, Doc):
-                yield next(func([doc.text], **settings))
-                continue
-
-            yield next(func([doc], **settings))
-
-    return wrapper

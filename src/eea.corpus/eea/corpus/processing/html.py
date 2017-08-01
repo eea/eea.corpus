@@ -3,7 +3,7 @@
 
 from bs4 import BeautifulSoup
 from colander import Schema
-from eea.corpus.processing import pipeline_component, needs_text_input
+from eea.corpus.processing import pipeline_component    # , needs_text_input
 import logging
 
 logger = logging.getLogger('eea.corpus')
