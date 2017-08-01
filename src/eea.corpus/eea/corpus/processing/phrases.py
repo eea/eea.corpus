@@ -53,46 +53,51 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     if os.path.exists(cache_path):
         phrases = Phrases()
         phrases = phrases.load(cache_path)
-        cs = content
-    else:
-        if env['preview_mode']:
 
-            # if running in preview mode, look for an async job already doing
-            # phrase model building
+        for doc in content:
+            for sentence in phrases[doc.tokenized_text]:
+                yield sentence
 
-            registry = StartedJobRegistry(queue.name, queue.connection)
-            all_job_ids = registry.get_job_ids()
+        raise StopIteration
 
-            if all_job_ids:
-                for jid in all_job_ids:
-                    job = queue.fetch_job()
-                    pos_pid = job.meta.get('phrase_model_id')
-                    if pos_pid == pid:
-                        for doc in content:      # just pass through
-                            yield doc
-                        raise StopIteration
+    if not env.get('preview_mode'):     # generate the phrases
+        cs, ps = tee(content, 2)
+        ps = chain.from_iterable(doc.tokenized_text for doc in ps)
+        phrases = Phrases(ps)     # TODO: pass settings here
+        phrases.save(cache_path)
 
-            job = queue.enqueue(build_phrases,
-                                timeout='1h',
-                                args=(
-                                    pipeline,
-                                    file_name,
-                                    text_column,
-                                ),
-                                meta={'phrase_model_id': pid},
-                                kwargs={})
-            print(job.id)
+        for doc in cs:
+            for sentence in phrases[doc.tokenized_text]:
+                yield sentence
+
+        raise StopIteration
+
+    # if running in preview mode, look for an async job already doing
+    # phrase model building
+
+    registry = StartedJobRegistry(queue.name, queue.connection)
+
+    for jid in registry.get_job_ids():
+        job = queue.fetch_job()
+        pos_pid = job.meta.get('phrase_model_id')
+
+        if pos_pid == pid:
             for doc in content:      # just pass through
                 yield doc
-        else:
-            cs, ps = tee(content, 2)
-            ps = chain.from_iterable(doc.tokenized_text for doc in ps)
-            phrases = Phrases(ps)     # TODO: pass settings here
-            phrases.save(cache_path)
+            raise StopIteration
 
-            for doc in cs:
-                for sentence in phrases[doc.tokenized_text]:
-                    yield sentence
+    job = queue.enqueue(build_phrases,
+                        timeout='1h',
+                        args=(
+                            pipeline,
+                            file_name,
+                            text_column,
+                        ),
+                        meta={'phrase_model_id': pid},
+                        kwargs={})
+    print(job.id)
+    for doc in content:      # just pass through
+        yield doc
 
 
 @job(queue=queue)

@@ -105,7 +105,7 @@ def todoc(doc):
         return Doc(doc)
 
     if isinstance(doc, list):
-        return Doc(" ".join(list))
+        return Doc(" ".join(doc))
 
 
 def build_pipeline(file_name, text_column, pipeline, preview_mode=True):

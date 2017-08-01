@@ -258,7 +258,7 @@ class CreateCorpusView(FormView):
         schema.add(w)
 
         self.form = Form(schema, renderer=deform_renderer, **kwargs)
-        print(self.form.buttons)
+        # print(self.form.buttons)
         return self.form
 
     def _apply_schema_edits(self, schemas, data):
