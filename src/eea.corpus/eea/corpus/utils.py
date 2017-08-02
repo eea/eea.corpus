@@ -210,8 +210,11 @@ def document_name(request):
 def hashed_id(items):
     """ Generate a short id based on a list of items.
 
+    >>> raise ValueError
+
     The items should be in a stable, "hashable" form:
         - dictionaries should be converted to tuples (k, v) and sorted
+
     """
     # same options will generate the same corpus id
     m = hashlib.sha224()
@@ -292,6 +295,6 @@ def to_text(doc):
         return doc.text
 
     if isinstance(doc, list):   # assume a list of words
-        return " ".join(list)
+        return " ".join(doc)
 
     raise ValueError("Unknown value type to convert to str")
