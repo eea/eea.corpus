@@ -1,0 +1,5 @@
+<div metal:use-macro="load: mapping.pt">
+  <div metal:fill-slot="panel-content">
+    ${job_status}
+  </div>
+</div>

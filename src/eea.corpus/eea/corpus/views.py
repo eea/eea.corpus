@@ -237,8 +237,7 @@ class CreateCorpusView(FormView):
                 _type = v.pop('schema_type', None)
                 if _type is not None:       # yeap, a schema
                     p = pipeline_registry[_type]
-                    s = p.schema(name=k, title=p.title,
-                                 renderer=deform_renderer)
+                    s = p.schema(name=k, title=p.title)
                     pos = v.pop('schema_position')
                     schemas[pos] = s
 
@@ -256,6 +255,8 @@ class CreateCorpusView(FormView):
         # move the pipeline components select widget to the bottom
         w = schema.__delitem__('pipeline_components')
         schema.add(w)
+
+        kwargs.update(dict(self.form_options))
 
         self.form = Form(schema, renderer=deform_renderer, **kwargs)
         # print(self.form.buttons)
@@ -292,6 +293,10 @@ class CreateCorpusView(FormView):
 
         return schemas
 
+    @property
+    def form_options(self):
+        return (('asta', 'este'),)
+
     def show(self, form):
         # re-validate form, it is possible to be changed
         appstruct = {}
@@ -314,7 +319,7 @@ class CreateCorpusView(FormView):
         add_component = appstruct.get('pipeline_components')
         if add_component:
             p = pipeline_registry[add_component]
-            s = p.schema(name=rand(10), title=p.title)
+            s = p.schema(name=rand(10), title=p.title,)
             f = s['schema_position']
             f.default = f.missing = len(schema.children)
             schema.add(s)
@@ -323,9 +328,6 @@ class CreateCorpusView(FormView):
         # move pipeline_components to the bottom
         w = schema.__delitem__('pipeline_components')
         schema.add(w)
-
-        form = Form(schema, buttons=self.buttons, renderer=deform_renderer,
-                    **dict(self.form_options))
 
         # handle processing actions, as appropriately
 
@@ -349,13 +351,18 @@ class CreateCorpusView(FormView):
                     p = pipeline_registry[_type.default]
                     pipeline.append((p.name, kw))
 
-            print(pipeline)
-            content_stream = build_pipeline(
-                self.document, appstruct['column'], pipeline, preview_mode=True
-            )
+            pstruct = self.request.create_corpus_pipeline_struct = {
+                'file_name': self.document,
+                'text_column': appstruct['column'],
+                'pipeline': pipeline,
+                'preview_mode': True
+            }
+            content_stream = build_pipeline(**pstruct)
 
             self.preview = islice(content_stream, 0, self.preview_size)
 
+        form = Form(schema, buttons=self.buttons, renderer=deform_renderer,
+                    **dict(self.form_options))
         return {
             'form': form.render(appstruct),
         }

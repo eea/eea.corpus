@@ -1,7 +1,16 @@
-""" Build a list of collocations and show them in the stream.
+""" Build a list of collocations (phrases) and show them in the stream.
+
+Normally it would be impossible to use the phrase detection in "real-time", as
+the phrases need to be detected in the entire corpus. To overcome this, we do:
+
+    * Try to load a phrase model suitable for the current pipeline.
+    * If one doesn't exist, schedule an async job that will generate the phrase
+      model
+    * Inform the user, in the UI, about the availability of the preview
 """
 
 from colander import Schema
+from deform.widget import MappingWidget
 from eea.corpus.async import queue
 from eea.corpus.processing import build_pipeline
 from eea.corpus.processing import pipeline_component  # , needs_tokenized_input
@@ -9,6 +18,7 @@ from eea.corpus.utils import corpus_base_path
 from eea.corpus.utils import hashed_id
 from gensim.models.phrases import Phrases
 from itertools import tee, chain
+from pyramid.threadlocal import get_current_request
 from rq.decorators import job
 from rq.registry import StartedJobRegistry
 from textacy.doc import Doc
@@ -19,10 +29,46 @@ import os.path
 logger = logging.getLogger('eea.corpus')
 
 
+class PhraseFinderWidget(MappingWidget):
+    """ Mapping widget with custom template
+    """
+
+    template = 'phrase_form'
+
+    def get_template_values(self, field, cstruct, kw):
+        values = super(PhraseFinderWidget, self).get_template_values(
+            field, cstruct, kw)
+
+        values['job_status'] = 'preview_not_available'
+
+        req = get_current_request()
+
+        pstruct = req.create_corpus_pipeline_struct.copy()
+        pstruct.pop('preview_mode')
+        phash_id = phrase_model_id(**pstruct)
+
+        base_path = corpus_base_path(pstruct['file_name'])
+        cache_path = os.path.join(base_path, '%s.phras' % phash_id)
+
+        # look for an already existing model
+        if os.path.exists(cache_path):
+            values['job_status'] = 'preview_available'
+            return values
+
+        # look for a job created for this model
+        for jb in queue.get_jobs():
+            if jb.meta['phrase_model_id'] == phash_id:
+                values['job_status'] = 'preview_' + jb.get_status()
+                return values
+
+        return values
+
+
 class PhraseFinder(Schema):
     """ Schema for the phrases finder
     """
 
+    widget = PhraseFinderWidget()       # overrides the default template
     description = "Find and process phrases in text."
 
 
@@ -125,6 +171,9 @@ def phrase_model_id(file_name, text_column, pipeline):
     salt = [(file_name, text_column)]
     for name, settings in pipeline:
         if isinstance(settings, dict):
+            settings = settings.copy()
+            settings.pop('schema_position', None)
+            settings.pop('schema_type', None)
             settings = sorted(settings.items())
         salt.append((name, settings))
     return hashed_id(salt)
