@@ -36,8 +36,8 @@ class PhraseFinderWidget(MappingWidget):
     template = 'phrase_form'
 
     def get_template_values(self, field, cstruct, kw):
-        values = super(PhraseFinderWidget, self).get_template_values(
-            field, cstruct, kw)
+        values = super(PhraseFinderWidget, self).\
+            get_template_values( field, cstruct, kw)
 
         values['job_status'] = 'preview_not_available'
 
