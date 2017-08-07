@@ -363,8 +363,11 @@ class CreateCorpusView(FormView):
 
         form = Form(schema, buttons=self.buttons, renderer=deform_renderer,
                     **dict(self.form_options))
+        reqts = form.get_widget_resources()
         return {
             'form': form.render(appstruct),
+            'css_links': reqts['css'],
+            'js_links': reqts['js'],
         }
 
 

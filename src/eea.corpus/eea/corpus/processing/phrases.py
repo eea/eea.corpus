@@ -11,6 +11,7 @@ the phrases need to be detected in the entire corpus. To overcome this, we do:
 
 from colander import Schema
 from deform.widget import MappingWidget
+from deform.widget import default_resource_registry
 from eea.corpus.async import queue
 from eea.corpus.processing import build_pipeline
 from eea.corpus.processing import pipeline_component  # , needs_tokenized_input
@@ -28,16 +29,21 @@ import os.path
 
 logger = logging.getLogger('eea.corpus')
 
+default_resource_registry.set_js_resources(
+    'phrase-widget', None, 'eea.corpus:static/phrase-widget.js'
+)
+
 
 class PhraseFinderWidget(MappingWidget):
     """ Mapping widget with custom template
     """
 
     template = 'phrase_form'
+    requirements = (('phrase-widget', None),)
 
     def get_template_values(self, field, cstruct, kw):
         values = super(PhraseFinderWidget, self).\
-            get_template_values( field, cstruct, kw)
+            get_template_values(field, cstruct, kw)
 
         values['job_status'] = 'preview_not_available'
 
@@ -46,6 +52,8 @@ class PhraseFinderWidget(MappingWidget):
         pstruct = req.create_corpus_pipeline_struct.copy()
         pstruct.pop('preview_mode')
         phash_id = phrase_model_id(**pstruct)
+
+        values['phash_id'] = phash_id
 
         base_path = corpus_base_path(pstruct['file_name'])
         cache_path = os.path.join(base_path, '%s.phras' % phash_id)
