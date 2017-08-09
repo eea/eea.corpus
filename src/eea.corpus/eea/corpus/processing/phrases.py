@@ -185,3 +185,8 @@ def phrase_model_id(file_name, text_column, pipeline):
             settings = sorted(settings.items())
         salt.append((name, settings))
     return hashed_id(salt)
+
+
+@view_config
+def phrase_model_status(request):
+    pass
