@@ -1,8 +1,8 @@
+# from eea.corpus.utils import to_text
+# from textacy.doc import Doc
 from collections import namedtuple, OrderedDict
 from eea.corpus.utils import to_doc
-from eea.corpus.utils import to_text
 from eea.corpus.utils import upload_location
-from textacy.doc import Doc
 import colander as c
 import deform
 import pandas as pd
@@ -134,3 +134,7 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
     content_stream = (to_doc(doc) for doc in content_stream)
 
     return content_stream
+
+
+def includeme(config):
+    config.include('.phrases')

@@ -40,6 +40,8 @@ def main(global_config, **settings):
 
     config.add_request_method(corpus_cache, reify=True)
 
+    config.include('eea.corpus.processing')
+
     config.scan()
 
     return config.make_wsgi_app()

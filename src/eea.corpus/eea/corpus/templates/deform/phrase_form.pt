@@ -2,11 +2,13 @@
   description description|field.description;
   errormsg errormsg|field.errormsg;
   item_template item_template|field.widget.item_template;
-  panel_status job_status == 'preview_available' and 'panel-success' or 'panel-danger';
+  panel_status job_status == 'OK' and 'panel-success' or 'panel-danger';
   "
   i18n:domain="deform">
 
-  <div class="panel ${panel_status} collapsed-form phrase-component-form" title="${description}">
+  <div
+    class="panel ${panel_status} collapsed-form phrase-component-form"
+    title="${description}">
     <div class="panel-heading">
       <strong>${title}</strong>
       <div class="btn-toolbar pull-right" role="toolbar">
@@ -21,9 +23,10 @@
           <button
              name="preview"
              title="Reload"
-             class="button-reload btn btn-sm btn-success">
-            <span class="glyphicon glyphicon-repeat"></span>
+             class="button-reload btn btn-sm btn-warning disabled">
+            <span class="glyphicon glyphicon-repeat glyph-spinner"></span>
           </button>
+
         </div>
 
         <div class="btn-group">
