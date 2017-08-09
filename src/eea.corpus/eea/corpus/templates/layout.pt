@@ -41,6 +41,7 @@
             </button>
             <a class="navbar-brand" href="/">EEA Corpus Server</a>
           </div>
+
           <div id="navbar" class="navbar-collapse collapse">
             <ul class="nav navbar-nav">
               <li>
@@ -48,6 +49,13 @@
                   <i class="glyphicon glyphicon-home"></i> Home
                 </a>
               </li>
+              <li>
+                <a class="btn secondary" href="/rq">
+                  <i class="glyphicon glyphicon-dashboard"></i> Async Jobs
+                </a>
+              </li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
               <li>
                 <a class="btn secondary" href="/upload">
                   <i class="glyphicon glyphicon-cloud-upload"></i> Upload a new file

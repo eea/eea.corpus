@@ -1,9 +1,12 @@
+from flask import Flask
+from pkg_resources import resource_filename
 from pyramid.paster import bootstrap
 from redis import Redis
 from rq import Queue, Worker, Connection
 from urllib import parse
 import click
 import os
+import rq_dashboard
 
 
 def redis_connection():
@@ -44,3 +47,29 @@ def worker(config_uri):
             w.work()
     finally:
         pyramid_env['closer']()
+
+
+def dashboard(global_config, **settings):
+    """ WSGI entry point for the Flask app RQ Dashboard
+    """
+
+    redis_uri = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+    p = parse.urlparse(redis_uri)
+    host, port = p.netloc.split(':')
+    db = len(p.path) > 1 and p.path[1:] or '0'
+
+    redis_settings = {
+        'REDIS_URL': redis_uri,
+        'REDIS_DB': db,
+        'REDIS_HOST': host,
+        'REDIS_PORT': port,
+    }
+
+    app = Flask(__name__,
+                static_url_path="/static",
+                static_folder=resource_filename("rq_dashboard", "static")
+                )
+    app.config.from_object(rq_dashboard.default_settings)
+    app.config.update(redis_settings)
+    app.register_blueprint(rq_dashboard.blueprint)
+    return app.wsgi_app

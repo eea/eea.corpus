@@ -146,11 +146,12 @@ def process(content, env, **settings):       # pipeline, preview_mode,
         jids = []
 
     for jid in jids:
-        job = queue.fetch_job()
+        job = queue.fetch_job(jid)
         pos_pid = job.meta.get('phrase_model_id')
 
         if pos_pid == pid:
-            for doc in content:      # just pass through
+            logger.info("Found a job (%s), passing through", jid)
+            for doc in content:      # just pass through and exit
                 yield doc
             raise StopIteration
 
