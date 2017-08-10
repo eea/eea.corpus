@@ -118,15 +118,17 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
         'file_name': file_name,
         'text_column': text_column,
         'pipeline': pipeline,
-        # Position in pipeline. Allows the processing functions to reconstitute
-        # the previous pipeline steps
-        'position': 0,
+
         # True if the pipeline is being previewed
         'preview_mode': preview_mode,
+
+        # schema name of the current step allows processors to reconstitute
+        # previous pipeline steps
+        'step_id': None,
     }
 
-    for i, (component_name, kwargs) in enumerate(pipeline):
-        env['position'] = i
+    for (component_name, step_id, kwargs) in pipeline:
+        env['step_id'] = step_id
         component = pipeline_registry[component_name]
         process = component.process
         content_stream = process(content_stream, env, **kwargs)

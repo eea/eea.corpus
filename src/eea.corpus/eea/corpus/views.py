@@ -349,7 +349,7 @@ class CreateCorpusView(FormView):
                     kw.pop('schema_type', None)
 
                     p = pipeline_registry[_type.default]
-                    pipeline.append((p.name, kw))
+                    pipeline.append((p.name, c.name, kw))
 
             pstruct = self.request.create_corpus_pipeline_struct = {
                 'file_name': self.document,

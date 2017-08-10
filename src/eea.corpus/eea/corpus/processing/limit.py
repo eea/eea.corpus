@@ -3,6 +3,7 @@
 
 from colander import Schema, Int, SchemaNode
 from eea.corpus.processing import pipeline_component
+from itertools import islice
 import logging
 
 logger = logging.getLogger('eea.corpus')
@@ -20,18 +21,21 @@ class LimitResults(Schema):
         description='Set to 0 if you want unlimited results',
     )
 
+    # fix_unicode = SchemaNode(
+    #     Bool(),
+    #     default=True,
+    #     title="Fix Unicode",
+    #     label='Fix broken unicode such as mojibake and garbled HTML entities.',
+    # )
+
 
 @pipeline_component(schema=LimitResults,
                     title="Limit number of results")
 def process(content, env, **settings):
     count = settings.get('max_count', 0)
-    i = 0
     if not count:
         for doc in content:
             yield doc
     else:
-        for doc in content:
-            i += 1
-            if i > count:
-                break
+        for doc in islice(content, 0, count):
             yield doc

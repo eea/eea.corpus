@@ -54,6 +54,16 @@ class PhraseFinderWidget(MappingWidget):
 
         pstruct = req.create_corpus_pipeline_struct.copy()
         pstruct.pop('preview_mode')
+
+        # we only need just the steps before this
+        pipeline = pstruct.pop('pipeline')
+        rec = []
+        for step in pipeline:
+            rec.append(step)
+            if step[1] == field.name:
+                break
+        pstruct['pipeline'] = rec
+
         phash_id = phrase_model_id(**pstruct)
 
         values['phash_id'] = phash_id
@@ -100,17 +110,22 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     TODO: implement the above
     """
 
-    pipeline = env['pipeline'][:env['position']+1]
+    pipeline = []
+    for step in env['pipeline']:
+        pipeline.append(step)
+        if step[1] == env['step_id']:
+            break
+
     file_name = env['file_name']
     text_column = env['text_column']
-
-    # convert content stream to textacy docs
-    content = (isinstance(doc, str) and Doc(doc) or doc for doc in content)
-    content = (doc for doc in content if doc.lang == 'en')
 
     pid = phrase_model_id(file_name, text_column, pipeline)
     base_path = corpus_base_path(env['file_name'])
     cache_path = os.path.join(base_path, '%s.phras' % pid)
+
+    # convert content stream to textacy docs
+    content = (isinstance(doc, str) and Doc(doc) or doc for doc in content)
+    content = (doc for doc in content if doc.lang == 'en')
 
     if os.path.exists(cache_path):
         phrases = Phrases()
@@ -130,7 +145,7 @@ def process(content, env, **settings):       # pipeline, preview_mode,
 
         for doc in cs:
             for sentence in phrases[doc.tokenized_text]:
-                yield sentence
+                yield " ".join(sentence)
 
         raise StopIteration
 
@@ -198,7 +213,7 @@ def phrase_model_id(file_name, text_column, pipeline):
     """ Calculate a hash as consistent uid based on the pipeline
     """
     salt = [(file_name, text_column)]
-    for name, settings in pipeline:
+    for name, step_id, settings in pipeline:
         if isinstance(settings, dict):
             settings = settings.copy()
             settings.pop('schema_position', None)
