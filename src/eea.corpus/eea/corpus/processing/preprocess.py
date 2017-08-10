@@ -1,5 +1,6 @@
 from colander import Schema, SchemaNode, Bool
 from eea.corpus.processing import pipeline_component
+from textacy.doc import Doc
 from textacy.preprocess import preprocess_text
 import logging
 
@@ -95,6 +96,7 @@ class TextacyPreprocess(Schema):
     title="Textacy Preprocessing"
 )
 def process(content, env, **settings):
+    content = (isinstance(doc, Doc) and doc.text or doc for doc in content)
     for doc in content:
         try:
             text = preprocess_text(doc, **settings)

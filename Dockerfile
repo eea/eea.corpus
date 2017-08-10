@@ -45,6 +45,7 @@ RUN mkdir /corpus
 ADD ./src /src
 
 # RUN pip install -r /src/eea.corpus/requirements.txt
+RUN pip install rq
 
 RUN cd /src/eea.corpus \
       && python setup.py develop
