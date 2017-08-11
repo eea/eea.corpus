@@ -39,12 +39,22 @@ default_resource_registry.set_js_resources(
 
 class PhraseFinderWidget(MappingWidget):
     """ Mapping widget with custom template
+
+    Template customizations:
+
+        * frame color based on phrase model status
+        * the reload button is disabled/enabled based on live phrase model
+          status
+        * there is an AJAX js script that queries job status and updates the
+          widget status indicators (frame color, reload preview button)
     """
 
     template = 'phrase_form'
     requirements = (('phrase-widget', None),)
 
     def get_template_values(self, field, cstruct, kw):
+        """ Inserts the job status and preview status into template values
+        """
         values = super(PhraseFinderWidget, self).\
             get_template_values(field, cstruct, kw)
 
@@ -53,19 +63,15 @@ class PhraseFinderWidget(MappingWidget):
         req = get_current_request()
 
         pstruct = req.create_corpus_pipeline_struct.copy()
-        pstruct.pop('preview_mode')
-
-        # we only need just the steps before this
-        rec = []
-        for step in pstruct.pop('pipeline'):
-            rec.append(step)
-            if step[1] == field.name:
-                break
-        pstruct['pipeline'] = rec
-
-        phash_id = phrase_model_id(**pstruct)
-
+        pstruct['step_id'] = field.schema.name
+        phash_id = phrase_model_id(
+            file_name=pstruct['file_name'],
+            text_column=pstruct['text_column'],
+            pipeline=component_pipeline(pstruct)
+        )
         values['phash_id'] = phash_id
+
+        logger.info("Phrase widget: need phrase model id %s", phash_id)
 
         # Calculate the initial "panel status" to assign a status color to this
         # widget
@@ -76,16 +82,10 @@ class PhraseFinderWidget(MappingWidget):
             values['job_status'] = 'preview_available'
             return values
 
-        try:
-            jobs = queue.get_jobs()
-        except ConnectionError:
-            logger.warning("Phrase widget: could not get a list of jobs")
-            jobs = []
-        for jb in jobs:  # look for a job created for this model
-            if jb.meta['phrase_model_id'] == phash_id:
-                values['job_status'] = 'preview_' + jb.get_status()
-                logger.info("Phrase widget: async job found %s", jb.id)
-                return values
+        # look for a job created for this model
+        job = get_assigned_job(phash_id)
+        if job is not None:
+            values['job_status'] = 'preview_' + job.get_status()
 
         return values
 
@@ -110,22 +110,22 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     TODO: implement the above
     """
 
-    # convert content stream to textacy docs
+    # convert content stream to ``textacy.doc.Doc``
+    # TODO: treat case when doc is a list of words.
     content = (isinstance(doc, str) and Doc(doc) or doc for doc in content)
+    # TODO: this is just to avoid errors on not installed language models
+    # In the future, this should be treated properly
     content = (doc for doc in content if doc.lang == 'en')
-
-    pipeline = []
-    for step in env['pipeline']:
-        pipeline.append(step)
-        if step[1] == env['step_id']:
-            break
 
     file_name = env['file_name']
     text_column = env['text_column']
+    phrase_model_pipeline = component_pipeline(env)
 
-    pid = phrase_model_id(file_name, text_column, pipeline)
-    base_path = corpus_base_path(env['file_name'])
-    cache_path = os.path.join(base_path, '%s.phras' % pid)
+    phash_id = phrase_model_id(file_name, text_column, phrase_model_pipeline)
+    logger.info("Phrase processing: need phrase model id %s", phash_id)
+
+    base_path = corpus_base_path(file_name)
+    cache_path = os.path.join(base_path, '%s.phras' % phash_id)
 
     if os.path.exists(cache_path):
         logger.info("Phrase processor: loading phrase model from %s",
@@ -139,7 +139,7 @@ def process(content, env, **settings):       # pipeline, preview_mode,
 
         raise StopIteration
 
-    if not env.get('preview_mode'):     # generate the phrases
+    if not env.get('preview_mode'):     # generate the phrases and phrase model
         logger.info("Phrase processor: producing phrase model %s", cache_path)
         cs, ps = tee(content, 2)
         ps = chain.from_iterable(doc.tokenized_text for doc in ps)
@@ -155,40 +155,25 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     # if running in preview mode, look for an async job already doing
     # phrase model building
 
-    registry = StartedJobRegistry(queue.name, queue.connection)
-
-    try:
-        jids = registry.get_job_ids()
-    except ConnectionError:
-        logger.warning("Phrase processing: could not get a list of job ids")
-        jids = []
-
-    for jid in jids:
-        job = queue.fetch_job(jid)
-        pos_pid = job.meta.get('phrase_model_id')
-
-        if pos_pid == pid:
-            logger.info("Phrase processor: found a job (%s), passing through",
-                        jid)
-            for doc in content:      # just pass through and exit
-                yield doc
-            raise StopIteration
-
-    try:
-        job = queue.enqueue(build_phrases,
-                            timeout='1h',
-                            args=(
-                                pipeline,
-                                file_name,
-                                text_column,
-                            ),
-                            meta={'phrase_model_id': pid},
-                            kwargs={})
-        logger.warning("Phrase processing: enqueued a new job %s", job.id)
-    except ConnectionError:
-        # swallow the error
-        logger.warning("Phrase processing: could not enqueue a job")
-        pass
+    job = get_assigned_job(phash_id)
+    if job is not None:
+        logger.info("Phrase processor: found a job (%s), passing through",
+                    job.id)
+    else:
+        try:
+            job = queue.enqueue(build_phrases,
+                                timeout='1h',
+                                args=(
+                                    phrase_model_pipeline,
+                                    file_name,
+                                    text_column,
+                                ),
+                                meta={'phrase_model_id': phash_id},
+                                kwargs={})
+            logger.warning("Phrase processing: enqueued a new job %s", job.id)
+        except ConnectionError:
+            # swallow the error
+            logger.warning("Phrase processing: could not enqueue a job")
 
     for doc in content:      # just pass through
         yield doc
@@ -247,6 +232,7 @@ def phrase_model_status(request):
     except ConnectionError:
         logger.warning("Phrase model status: could not get job status")
         jobs = []
+
     for jb in jobs:  # look for a job created for this model
         if jb.meta['phrase_model_id'] == phash_id:
             return {
@@ -256,6 +242,55 @@ def phrase_model_status(request):
     return {
         'status': 'unavailable'
     }
+
+
+def component_pipeline(env):
+    """ Get the pipeline for a component, based on its preceding pipeline steps
+
+    # TODO: move this to a more generic location
+    """
+
+    pipeline = []
+    for step in env['pipeline']:
+        pipeline.append(step)
+        if step[1] == env['step_id']:
+            break
+
+    return pipeline
+
+
+def get_assigned_job(phash_id):
+    """ Get the queued or processing job for this phrase model
+
+    TODO: look into more registries
+    """
+
+    # First, look for an already started job
+    registry = StartedJobRegistry(queue.name, queue.connection)
+    try:
+        jids = registry.get_job_ids()
+    except ConnectionError:
+        logger.warning("Phrase processing: ConnectionError, could not get "
+                       "a list of job ids")
+        jids = []
+
+    for jid in jids:
+        job = queue.fetch_job(jid)
+        if phash_id == job.meta.get('phrase_model_id'):
+            logger.info("Phrase widget: async job found %s", job.id)
+            return job
+
+    # Look for a queued job
+    try:
+        jobs = queue.get_jobs()
+    except ConnectionError:
+        logger.warning("Phrase widget: ConnectionError, could not get a list "
+                       "of jobs")
+    jobs = []
+    for job in jobs:  # look for a job created for this model
+        if job.meta['phrase_model_id'] == phash_id:
+            logger.info("Phrase widget: async job found %s", job.id)
+            return job
 
 
 def includeme(config):
