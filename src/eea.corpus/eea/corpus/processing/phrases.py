@@ -56,9 +56,8 @@ class PhraseFinderWidget(MappingWidget):
         pstruct.pop('preview_mode')
 
         # we only need just the steps before this
-        pipeline = pstruct.pop('pipeline')
         rec = []
-        for step in pipeline:
+        for step in pstruct.pop('pipeline'):
             rec.append(step)
             if step[1] == field.name:
                 break
@@ -71,9 +70,9 @@ class PhraseFinderWidget(MappingWidget):
         # Calculate the initial "panel status" to assign a status color to this
         # widget
         base_path = corpus_base_path(pstruct['file_name'])
-        cache_path = os.path.join(base_path, '%s.phras' % phash_id)
-
-        if os.path.exists(cache_path):  # look for an already existing model
+        cpath = os.path.join(base_path, '%s.phras' % phash_id)
+        if os.path.exists(cpath):  # look for an already existing model
+            logger.info("Phrase widget: found a phrase model at %s", cpath)
             values['job_status'] = 'preview_available'
             return values
 
@@ -85,6 +84,7 @@ class PhraseFinderWidget(MappingWidget):
         for jb in jobs:  # look for a job created for this model
             if jb.meta['phrase_model_id'] == phash_id:
                 values['job_status'] = 'preview_' + jb.get_status()
+                logger.info("Phrase widget: async job found %s", jb.id)
                 return values
 
         return values
@@ -110,6 +110,10 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     TODO: implement the above
     """
 
+    # convert content stream to textacy docs
+    content = (isinstance(doc, str) and Doc(doc) or doc for doc in content)
+    content = (doc for doc in content if doc.lang == 'en')
+
     pipeline = []
     for step in env['pipeline']:
         pipeline.append(step)
@@ -123,11 +127,9 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     base_path = corpus_base_path(env['file_name'])
     cache_path = os.path.join(base_path, '%s.phras' % pid)
 
-    # convert content stream to textacy docs
-    content = (isinstance(doc, str) and Doc(doc) or doc for doc in content)
-    content = (doc for doc in content if doc.lang == 'en')
-
     if os.path.exists(cache_path):
+        logger.info("Phrase processor: loading phrase model from %s",
+                    cache_path)
         phrases = Phrases()
         phrases = phrases.load(cache_path)
 
@@ -138,6 +140,7 @@ def process(content, env, **settings):       # pipeline, preview_mode,
         raise StopIteration
 
     if not env.get('preview_mode'):     # generate the phrases
+        logger.info("Phrase processor: producing phrase model %s", cache_path)
         cs, ps = tee(content, 2)
         ps = chain.from_iterable(doc.tokenized_text for doc in ps)
         phrases = Phrases(ps)     # TODO: pass settings here
@@ -165,7 +168,8 @@ def process(content, env, **settings):       # pipeline, preview_mode,
         pos_pid = job.meta.get('phrase_model_id')
 
         if pos_pid == pid:
-            logger.info("Found a job (%s), passing through", jid)
+            logger.info("Phrase processor: found a job (%s), passing through",
+                        jid)
             for doc in content:      # just pass through and exit
                 yield doc
             raise StopIteration
@@ -180,7 +184,7 @@ def process(content, env, **settings):       # pipeline, preview_mode,
                             ),
                             meta={'phrase_model_id': pid},
                             kwargs={})
-        print(job.id)
+        logger.warning("Phrase processing: enqueued a new job %s", job.id)
     except ConnectionError:
         # swallow the error
         logger.warning("Phrase processing: could not enqueue a job")
