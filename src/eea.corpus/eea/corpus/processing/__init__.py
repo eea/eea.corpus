@@ -3,7 +3,7 @@
 from collections import namedtuple, OrderedDict
 from eea.corpus.utils import to_doc
 from eea.corpus.utils import upload_location
-import colander as c
+import colander
 import deform
 import pandas as pd
 import venusian
@@ -71,14 +71,14 @@ def pipeline_component(schema, title, actions=None):
         def callback(scanner, name, func):
 
             class WrappedSchema(schema):
-                schema_type = c.SchemaNode(
-                    c.String(),
+                schema_type = colander.SchemaNode(
+                    colander.String(),
                     widget=deform.widget.HiddenWidget(),
                     default=uid,
                     missing=uid,
                 )
-                schema_position = c.SchemaNode(
-                    c.Int(),
+                schema_position = colander.SchemaNode(
+                    colander.Int(),
                     widget=deform.widget.HiddenWidget(),
                     default=-1,
                     missing=-1,

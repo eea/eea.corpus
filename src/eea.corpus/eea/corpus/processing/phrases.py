@@ -18,7 +18,7 @@ from eea.corpus.processing import pipeline_component  # , needs_tokenized_input
 from eea.corpus.utils import CORPUS_STORAGE
 from eea.corpus.utils import corpus_base_path
 from eea.corpus.utils import hashed_id
-from gensim.models.phrases import Phrases
+from gensim.models.phrases import Phrases, Phraser
 from glob import iglob
 from itertools import tee, chain
 from pyramid.threadlocal import get_current_request
@@ -105,13 +105,59 @@ class PhraseFinder(Schema):
         ('replace', 'Replace all text with found phrases')
     )
 
+    SCORING = (
+        ('default', 'Default'),
+        ('npmi', 'NPMI: Slower, better with common words'),
+    )
+
+    LEVELS = (
+        (2, 'Bigrams'),
+        (3, 'Trigrams'),
+        (4, 'Quadgrams'),
+    )
+
     mode = colander.SchemaNode(
         colander.String(),
         validator=colander.OneOf([x[0] for x in MODES]),
-        default='tokenize',
-        missing='tokenize',
+        default=MODES[0][0],
+        missing=MODES[0][0],
         title="Operating mode",
         widget=deform.widget.RadioChoiceWidget(values=MODES)
+    )
+
+    level = colander.SchemaNode(
+        colander.Int(),
+        default=LEVELS[0][0],
+        missing=LEVELS[0][0],
+        title='N-gram level',
+        widget=deform.widget.RadioChoiceWidget(values=LEVELS),
+        description='How many words to include in phrase detection',
+    )
+
+    min_count = colander.SchemaNode(
+        colander.Int(),
+        default=5,
+        missing=5,
+        title='Minimum number',
+        description='Ignore all words with total count lower then this',
+    )
+
+    threshold = colander.SchemaNode(
+        colander.Float(),
+        default=10.0,
+        missing=10.0,
+        title='Threshold',
+        description='Score threshold for forming phrases. Higher means '
+                    'fewer phrases.',
+    )
+
+    scoring = colander.SchemaNode(
+        colander.String(),
+        validator=colander.OneOf([x[0] for x in SCORING]),
+        default=SCORING[0][0],
+        missing=SCORING[0][0],
+        title="Scoring algorithm",
+        widget=deform.widget.RadioChoiceWidget(values=SCORING)
     )
 
 
@@ -131,8 +177,11 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     # TODO: treat case when doc is a list of words.
     content = (isinstance(doc, str) and Doc(doc) or doc for doc in content)
     # TODO: this is just to avoid errors on not installed language models
-    # In the future, this should be treated properly
+    # In the future, this should be treated properly or as a pipeline component
     content = (doc for doc in content if doc.lang == 'en')
+
+    # tokenized text is list of statements, chain them to make list of tokens
+    content = chain.from_iterable(doc.tokenized_text for doc in content)
 
     file_name = env['file_name']
     text_column = env['text_column']
@@ -144,35 +193,33 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     base_path = corpus_base_path(file_name)
     cache_path = os.path.join(base_path, '%s.phras' % phash_id)
 
-    if os.path.exists(cache_path):
-        logger.info("Phrase processor: loading phrase model from %s",
-                    cache_path)
-        phrases = Phrases()
-        phrases = phrases.load(cache_path)
+    for f in os.listdir(base_path):
+        if f.startswith(cache_path):    # it's an ngram model
+            yield from cached_phrases(cache_path, settings, content)
+            raise StopIteration
 
-        for doc in content:
-            for sentence in phrases[doc.tokenized_text]:
-                yield sentence
-
-        raise StopIteration
-
-    if not env.get('preview_mode'):     # generate the phrases and phrase model
+    if not env.get('preview_mode'):  # production mode, generate phrase model
         logger.info("Phrase processor: producing phrase model %s", cache_path)
-        cs, ps = tee(content, 2)
-        ps = chain.from_iterable(doc.tokenized_text for doc in ps)
-        phrases = Phrases(ps)     # TODO: pass settings here
-        phrases.save(cache_path)
 
-        for doc in cs:
-            for sentence in phrases[doc.tokenized_text]:
-                yield " ".join(sentence)
+        # According to tee() docs, this may be inefficient in terms of memory.
+        # We need to do this because we need multiple passes through the
+        # content stream.
+        cs1, cs2 = tee(content, 2)
+        for i in range(settings['level'] - 1):
+            phrases = Phrases(cs1)
+            path = "%s.%s" % (cache_path, i + 1)
+            logger.info("Phrase processor: Saving %s", path)
+            phrases.save(path)
+            content = phrases[cs2]  # tokenize phrases in content stream
+            cs1, cs2 = tee(content, 2)
 
-        raise StopIteration
+        yield from content
 
     # if running in preview mode, look for an async job already doing
     # phrase model building
 
     job = get_assigned_job(phash_id)
+    job = None      # TODO: end debug
     if job is not None:
         logger.info("Phrase processor: found a job (%s), passing through",
                     job.id)
@@ -192,8 +239,8 @@ def process(content, env, **settings):       # pipeline, preview_mode,
             # swallow the error
             logger.warning("Phrase processing: could not enqueue a job")
 
-    for doc in content:      # just pass through
-        yield doc
+    # TODO: this is now tokenized text, should fix
+    yield from content
 
 
 @job(queue=queue)
@@ -308,6 +355,33 @@ def get_assigned_job(phash_id):
         if job.meta['phrase_model_id'] == phash_id:
             logger.info("Phrase widget: async job found %s", job.id)
             return job
+
+
+def cached_phrases(cache_path, settings, content):
+    """ Returns tokenized phrases using a saved cache model.
+    """
+    logger.info("Phrase processor: using phrase model from %s", cache_path)
+
+    phrases = Phrases.load(cache_path)
+    phraser = Phraser(phrases)
+
+    content = chain.from_iterable(doc.tokenized_text for doc in content)
+
+    # TODO: this needs rework
+    for doc in content:
+
+        # run the bigram model multiple times, to get bigger phrases
+        # only words in phrase model has been trained multiple times
+        # TODO: ^
+        text = doc.tokenized_text
+        for i in range(settings['level'] - 1):
+            text = phraser[text]
+
+        # convert list of words back to full text document
+        t = ". ".join(" ".join(s for s in text))
+        yield t
+
+    raise StopIteration
 
 
 def includeme(config):

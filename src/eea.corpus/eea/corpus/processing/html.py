@@ -12,11 +12,11 @@ logger = logging.getLogger('eea.corpus')
 class BeautifulSoupText(Schema):
     """ Schema for BeautifulSoup based parser
     """
-    description = "Strips HTML tags, leaving only plain text."
+    description = "Uses BeautifulSoup to extract plain text from HTML content."
 
 
 @pipeline_component(schema=BeautifulSoupText,
-                    title="Strip tags with BeautifulSoup")
+                    title="Strip HTML tags")
 def process(content, env, **settings):
     for doc in content:
         try:
