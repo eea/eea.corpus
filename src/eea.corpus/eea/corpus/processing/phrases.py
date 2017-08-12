@@ -26,6 +26,8 @@ from redis.exceptions import ConnectionError
 from rq.decorators import job
 from rq.registry import StartedJobRegistry
 from textacy.doc import Doc
+import colander
+import deform.widget
 import logging
 import os.path
 
@@ -96,6 +98,21 @@ class PhraseFinder(Schema):
 
     widget = PhraseFinderWidget()       # overrides the default template
     description = "Find and process phrases in text."
+
+    MODES = (
+        ('tokenize', 'Tokenize phrases in text'),
+        ('append', 'Append phrases to text'),
+        ('replace', 'Replace all text with found phrases')
+    )
+
+    mode = colander.SchemaNode(
+        colander.String(),
+        validator=colander.OneOf([x[0] for x in MODES]),
+        default='tokenize',
+        missing='tokenize',
+        title="Operating mode",
+        widget=deform.widget.RadioChoiceWidget(values=MODES)
+    )
 
 
 @pipeline_component(schema=PhraseFinder,

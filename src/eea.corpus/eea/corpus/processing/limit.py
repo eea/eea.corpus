@@ -21,13 +21,6 @@ class LimitResults(Schema):
         description='Set to 0 if you want unlimited results',
     )
 
-    # fix_unicode = SchemaNode(
-    #     Bool(),
-    #     default=True,
-    #     title="Fix Unicode",
-    #     label='Fix broken unicode such as mojibake and garbled HTML entities.',
-    # )
-
 
 @pipeline_component(schema=LimitResults,
                     title="Limit number of results")
