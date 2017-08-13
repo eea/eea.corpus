@@ -14,6 +14,7 @@ from deform.widget import MappingWidget
 from deform.widget import default_resource_registry
 from eea.corpus.async import queue
 from eea.corpus.processing import build_pipeline
+from eea.corpus.processing import get_pipeline_for_component
 from eea.corpus.processing import pipeline_component  # , needs_tokenized_input
 from eea.corpus.utils import CORPUS_STORAGE
 from eea.corpus.utils import corpus_base_path
@@ -69,7 +70,7 @@ class PhraseFinderWidget(MappingWidget):
         phash_id = phrase_model_id(
             file_name=pstruct['file_name'],
             text_column=pstruct['text_column'],
-            pipeline=component_pipeline(pstruct)
+            pipeline=get_pipeline_for_component(pstruct)
         )
         values['phash_id'] = phash_id
 
@@ -79,10 +80,12 @@ class PhraseFinderWidget(MappingWidget):
         # widget
         base_path = corpus_base_path(pstruct['file_name'])
         cpath = os.path.join(base_path, '%s.phras' % phash_id)
-        if os.path.exists(cpath):  # look for an already existing model
-            logger.info("Phrase widget: found a phrase model at %s", cpath)
-            values['job_status'] = 'preview_available'
-            return values
+
+        for f in os.listdir(base_path):
+            if f.startswith(cpath):    # it's an ngram model
+                logger.info("Phrase widget: found a phrase model at %s", cpath)
+                values['job_status'] = 'preview_available'
+                return values
 
         # look for a job created for this model
         job = get_assigned_job(phash_id)
@@ -185,7 +188,7 @@ def process(content, env, **settings):       # pipeline, preview_mode,
 
     file_name = env['file_name']
     text_column = env['text_column']
-    phrase_model_pipeline = component_pipeline(env)
+    phrase_model_pipeline = get_pipeline_for_component(env)
 
     phash_id = phrase_model_id(file_name, text_column, phrase_model_pipeline)
     logger.info("Phrase processing: need phrase model id %s", phash_id)
@@ -193,9 +196,11 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     base_path = corpus_base_path(file_name)
     cache_path = os.path.join(base_path, '%s.phras' % phash_id)
 
+    # TODO: test that the phrase model file is "finished"
+    # maybe use transactional file system?
     for f in os.listdir(base_path):
         if f.startswith(cache_path):    # it's an ngram model
-            yield from cached_phrases(cache_path, settings, content)
+            yield from cached_phrases(cache_path, content)
             raise StopIteration
 
     if not env.get('preview_mode'):  # production mode, generate phrase model
@@ -214,16 +219,14 @@ def process(content, env, **settings):       # pipeline, preview_mode,
             cs1, cs2 = tee(content, 2)
 
         yield from content
+        raise StopIteration
 
     # if running in preview mode, look for an async job already doing
     # phrase model building
-
     job = get_assigned_job(phash_id)
     job = None      # TODO: end debug
-    if job is not None:
-        logger.info("Phrase processor: found a job (%s), passing through",
-                    job.id)
-    else:
+
+    if job is None:
         try:
             job = queue.enqueue(build_phrases,
                                 timeout='1h',
@@ -238,9 +241,11 @@ def process(content, env, **settings):       # pipeline, preview_mode,
         except ConnectionError:
             # swallow the error
             logger.warning("Phrase processing: could not enqueue a job")
+    else:
+        logger.info("Phrase processor: found a job (%s), passing through",
+                    job.id)
 
-    # TODO: this is now tokenized text, should fix
-    yield from content
+    yield from content  # TODO: this is now tokenized text, should fix
 
 
 @job(queue=queue)
@@ -277,6 +282,12 @@ def phrase_model_id(file_name, text_column, pipeline):
 
 
 def phrase_model_status(request):
+    """ A view for information about the async status of a phrase model
+
+    It looks up any existing running or queued async job that would process
+    the phrases and returns JSON info about that.
+    """
+
     phash_id = request.matchdict['phash_id']
 
     # look for a filename in corpus var folder
@@ -306,21 +317,6 @@ def phrase_model_status(request):
     return {
         'status': 'unavailable'
     }
-
-
-def component_pipeline(env):
-    """ Get the pipeline for a component, based on its preceding pipeline steps
-
-    # TODO: move this to a more generic location
-    """
-
-    pipeline = []
-    for step in env['pipeline']:
-        pipeline.append(step)
-        if step[1] == env['step_id']:
-            break
-
-    return pipeline
 
 
 def get_assigned_job(phash_id):
@@ -357,31 +353,40 @@ def get_assigned_job(phash_id):
             return job
 
 
-def cached_phrases(cache_path, settings, content):
-    """ Returns tokenized phrases using a saved cache model.
-    """
-    logger.info("Phrase processor: using phrase model from %s", cache_path)
+def cached_phrases(cache_path, content):
+    """ Returns tokenized phrases using saved phrase models.
 
-    phrases = Phrases.load(cache_path)
-    phraser = Phraser(phrases)
+    The phrase models are saved using a commong name, like:
+
+        <phash_id>.phras.X
+
+    where X is the n-gram level (one of 2,3,4).
+
+    The phrase models are loaded and process the content stream.
+    """
 
     content = chain.from_iterable(doc.tokenized_text for doc in content)
 
-    # TODO: this needs rework
-    for doc in content:
+    logger.info("Phrase processor: using phrase models from %s", cache_path)
 
-        # run the bigram model multiple times, to get bigger phrases
-        # only words in phrase model has been trained multiple times
-        # TODO: ^
-        text = doc.tokenized_text
-        for i in range(settings['level'] - 1):
-            text = phraser[text]
+    phrase_model_files = []
+    base_path, base_name = os.path.split(cache_path)
+    for name in os.listdir(base_path):
+        if name.startswith(base_name):
+            phrase_model_files.append(os.path.join(base_path, name))
 
-        # convert list of words back to full text document
-        t = ". ".join(" ".join(s for s in text))
-        yield t
+    cache_files.sort()
+    for fpath in phrase_model_files:
+        phrases = Phrases.load(fpath)
+        content = phrases[content]
 
-    raise StopIteration
+    # convert list of words back to full text document
+    content = (
+        ". ".join(
+            (" ".join(w for w in sent) for sent in content)
+        )
+    )
+    yield from content
 
 
 def includeme(config):

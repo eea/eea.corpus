@@ -138,5 +138,18 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
     return content_stream
 
 
+def get_pipeline_for_component(env):
+    """ Get the pipeline for a component, based on its preceding pipeline steps
+    """
+
+    pipeline = []
+    for step in env['pipeline']:
+        pipeline.append(step)
+        if step[1] == env['step_id']:
+            break
+
+    return pipeline
+
+
 def includeme(config):
     config.include('.phrases')
