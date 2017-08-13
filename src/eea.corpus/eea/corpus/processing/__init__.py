@@ -1,5 +1,3 @@
-# from eea.corpus.utils import to_text
-# from textacy.doc import Doc
 from collections import namedtuple, OrderedDict
 from eea.corpus.utils import to_doc
 from eea.corpus.utils import upload_location
@@ -136,19 +134,6 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
     content_stream = (to_doc(doc) for doc in content_stream)
 
     return content_stream
-
-
-def get_pipeline_for_component(env):
-    """ Get the pipeline for a component, based on its preceding pipeline steps
-    """
-
-    pipeline = []
-    for step in env['pipeline']:
-        pipeline.append(step)
-        if step[1] == env['step_id']:
-            break
-
-    return pipeline
 
 
 def includeme(config):
