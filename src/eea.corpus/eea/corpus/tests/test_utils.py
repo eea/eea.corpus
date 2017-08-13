@@ -2,10 +2,9 @@ from eea.corpus.utils import to_doc
 from eea.corpus.utils import to_text
 from unittest.mock import Mock, patch
 from textacy.doc import Doc
-import unittest
 
 
-class MiscUtilsTests(unittest.TestCase):
+class TestMiscUtils:
     """ Tests for misc utils
     """
 
@@ -39,7 +38,7 @@ class MiscUtilsTests(unittest.TestCase):
         assert document_name(req) == 'first'
 
 
-class ConvertorDecoratorsTests(unittest.TestCase):
+class TestConvertorDecorators:
     """ Tests for stream conversion decorators found in eea.corpus.utils
     """
 
@@ -85,7 +84,7 @@ class ConvertorDecoratorsTests(unittest.TestCase):
 
 
 # from pyramid import testing
-
+# import unittest
 # class ViewTests(unittest.TestCase):
 #     def setUp(self):
 #         self.config = testing.setUp()
@@ -110,13 +109,10 @@ class ConvertorDecoratorsTests(unittest.TestCase):
 #     def test_root(self):
 #         res = self.testapp.get('/', status=200)
 #         self.assertTrue(b'Pyramid' in res.body)
-
-
 # def test_doctest():
 #     finder = doctest.DocTestFinder(exclude_empty=False)
 #     suite = doctest.DocTestSuite(test_finder=finder)
 #     suite.run()
-
 #
 # def load_tests(loader, tests, ignore):
 #     from eea.corpus import utils

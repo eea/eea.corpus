@@ -1,10 +1,7 @@
-from eea.corpus.processing.phrases.widget import PhraseFinderWidget
 from colander import Schema
+from eea.corpus.processing.phrases.widget import PhraseFinderWidget
 import colander
 import deform.widget
-import logging
-
-logger = logging.getLogger('eea.corpus')
 
 
 class PhraseFinder(Schema):
