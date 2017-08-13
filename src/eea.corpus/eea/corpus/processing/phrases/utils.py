@@ -27,3 +27,13 @@ def phrase_model_files(base_path, phash_id):
 # cache_path = os.path.join(base_path, '%s.phras' % phash_id)
 # import os.path
 # from eea.corpus.processing.utils import component_phash_id
+# job = queue.enqueue(build_phrases,
+#                     args=(
+#                         phrase_model_pipeline,
+#                         file_name,
+#                         text_column,
+#                         phash_id,
+#                         settings,
+#                     ),
+#                     meta={'phash_id': phash_id},
+#                     kwargs={})

@@ -10,7 +10,6 @@ the phrases need to be detected in the entire corpus. To overcome this, we do:
 """
 
 from eea.corpus.async import get_assigned_job
-from eea.corpus.async import queue
 from eea.corpus.processing import pipeline_component
 from eea.corpus.processing.phrases.async import build_phrases
 from eea.corpus.processing.phrases.schema import PhraseFinder
@@ -46,7 +45,7 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     yield from cached_phrases(content, env, settings)
 
     if env['preview_mode']:
-        yield from preview_phrases()
+        yield from preview_phrases(content, env, settings)
     else:
         yield from produce_phrases(content, env, settings)
 
@@ -70,26 +69,20 @@ def preview_phrases(content, env, settings, phash_id):
 
     logger.info("Phrase processing: need phrase model id %s", phash_id)
 
-    phrase_model_pipeline = get_pipeline_for_component(env)
-
     job = get_assigned_job(phash_id)
-
     if job is None:
+        phrase_model_pipeline = get_pipeline_for_component(env)
         try:
-            job = queue.enqueue(build_phrases,
-                                timeout='1h',
-                                args=(
-                                    phrase_model_pipeline,
-                                    file_name,
-                                    text_column,
-                                    phash_id,
-                                    settings,
-                                ),
-                                meta={'phash_id': phash_id},
-                                kwargs={})
+            job = build_phrases.delay(
+                phrase_model_pipeline,
+                file_name,
+                text_column,
+                phash_id,
+                settings,
+                meta={'phash_id': phash_id},
+            )
             logger.warning("Phrase processing: enqueued a new job %s", job.id)
-        except ConnectionError:
-            # swallow the error
+        except ConnectionError:       # swallow the error
             logger.warning("Phrase processing: could not enqueue a job")
     else:
         logger.info("Preview phrases: found a job (%s), passing through",
@@ -138,12 +131,12 @@ def cached_phrases(content, env, settings):
 
     content = chain.from_iterable(doc.tokenized_text for doc in content)
 
-    # logger.info("Phrase processor: using phrase models from %s", cache_path)
-
     base_path = corpus_base_path(env['file_name'])
     files = phrase_model_files(base_path, env['phash_id'])
     if not files:
         raise StopIteration
+
+    logger.info("Phrase processor: using phrase models from %s", base_path)
 
     # TODO: implement filtering modes based on phrases
     for fpath in files:

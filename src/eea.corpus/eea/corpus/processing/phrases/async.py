@@ -10,7 +10,11 @@ import os.path
 logger = logging.getLogger('eea.corpus')
 
 
-@job(queue=queue)
+@job(
+    queue=queue,
+    timeout='1h',
+    ttl='15m',  # abort job if not picked up in 15m
+)
 def build_phrases(pipeline, file_name, text_column, phash_id, settings):
     """ Async job to build a phrase models using the provided pipeline
     """
