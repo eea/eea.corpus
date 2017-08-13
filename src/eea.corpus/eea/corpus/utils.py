@@ -1,3 +1,5 @@
+# TODO: keep the metadata stream
+
 # from textacy.fileio import split_record_fields
 from __future__ import unicode_literals
 from collections import defaultdict
@@ -298,3 +300,10 @@ def to_text(doc):
         return " ".join(doc)
 
     raise ValueError("Unknown value type to convert to str")
+
+
+def is_locked(fpath):
+    """ Check if a lock file exists for given path
+    """
+    path = fpath + '.lock'
+    return os.path.exists(path)

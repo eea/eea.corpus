@@ -9,21 +9,19 @@ the phrases need to be detected in the entire corpus. To overcome this, we do:
     * Inform the user, in the UI, about the availability of the preview
 """
 
-# from eea.corpus.processing import build_pipeline
-from eea.corpus.async import queue
 from eea.corpus.async import get_assigned_job
-from eea.corpus.processing import get_pipeline_for_component
+from eea.corpus.async import queue
 from eea.corpus.processing import pipeline_component
+from eea.corpus.processing.phrases.async import build_phrases
 from eea.corpus.processing.phrases.schema import PhraseFinder
-from eea.corpus.processing.utils import component_phash_id
+from eea.corpus.processing.phrases.utils import phrase_model_files
+from eea.corpus.processing.utils import get_pipeline_for_component
 from eea.corpus.utils import corpus_base_path
 from gensim.models.phrases import Phrases
 from itertools import chain
-from itertools import tee
 from redis.exceptions import ConnectionError
 from textacy.doc import Doc
 import logging
-import os.path
 
 logger = logging.getLogger('eea.corpus')
 
@@ -31,13 +29,7 @@ logger = logging.getLogger('eea.corpus')
 @pipeline_component(schema=PhraseFinder,
                     title="Find and process phrases")
 def process(content, env, **settings):       # pipeline, preview_mode,
-    """ We can run in several modes:
-
-    * remove all text but leave the phrases tokens
-    * append the collocations to the document
-    * replace the collocations where they appear
-
-    TODO: implement the above
+    """ Phrases detection and processing
     """
 
     # convert content stream to ``textacy.doc.Doc``
@@ -48,39 +40,39 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     content = (doc for doc in content if doc.lang == 'en')
 
     # tokenized text is list of statements, chain them to make list of tokens
-    content = chain.from_iterable(doc.tokenized_text for doc in content)
+    # TODO: is this correct?
+    # content = chain.from_iterable(doc.tokenized_text for doc in content)
+
+    yield from cached_phrases(content, env, settings)
+
+    if env['preview_mode']:
+        yield from preview_phrases()
+    else:
+        yield from produce_phrases(content, env, settings)
+
+
+def preview_phrases(content, env, settings, phash_id):
+    """ Tokenized phrases in preview mode
+
+    When running in preview mode, check for an already running job with this
+    phash_id. If no such job, schedule a new job.
+    """
 
     file_name = env['file_name']
     text_column = env['text_column']
-    phrase_model_pipeline = get_pipeline_for_component(env)
+    phash_id = env['phash_id']
 
-    phash_id = component_phash_id(
-        file_name, text_column, phrase_model_pipeline
-    )
-    logger.info("Phrase processing: need phrase model id %s", phash_id)
-
+    # If saved phrase models exist, we don't do anything
     base_path = corpus_base_path(file_name)
-    cache_path = os.path.join(base_path, '%s.phras' % phash_id)
-
-    # TODO: test that the phrase model file is "finished"
-    # maybe use transactional file system?
-    for f in os.listdir(base_path):
-        if f.startswith(cache_path):    # it's an ngram model
-            # TODO: enable this right now
-            # yield from cached_phrases(cache_path, content)
-            raise StopIteration
-
-    if not env.get('preview_mode'):  # production mode, generate phrase model
-        logger.info("Phrase processor: producing phrase model %s", cache_path)
-        content = build_phrase_models(content, cache_path, settings['level'])
-        # TODO: enable this right now
-        # yield from content
+    files = phrase_model_files(base_path, phash_id)
+    if files:
         raise StopIteration
 
-    # if running in preview mode, look for an async job already doing
-    # phrase model building
+    logger.info("Phrase processing: need phrase model id %s", phash_id)
+
+    phrase_model_pipeline = get_pipeline_for_component(env)
+
     job = get_assigned_job(phash_id)
-    job = None      # TODO: end debug
 
     if job is None:
         try:
@@ -90,6 +82,8 @@ def process(content, env, **settings):       # pipeline, preview_mode,
                                     phrase_model_pipeline,
                                     file_name,
                                     text_column,
+                                    phash_id,
+                                    settings,
                                 ),
                                 meta={'phash_id': phash_id},
                                 kwargs={})
@@ -98,39 +92,29 @@ def process(content, env, **settings):       # pipeline, preview_mode,
             # swallow the error
             logger.warning("Phrase processing: could not enqueue a job")
     else:
-        logger.info("Phrase processor: found a job (%s), passing through",
+        logger.info("Preview phrases: found a job (%s), passing through",
                     job.id)
+
+    yield from content
+
+
+def produce_phrases(content, env, settings):
+    """
+    """
+
+    # logger.info("Phrase processor: producing phrase model %s", cache_path)
+    # content = build_phrase_models(content, cache_path, settings['level'])
+
+    # if running in preview mode, look for an async job already doing
+    # phrase model building
 
     # TODO: enable this right now
     # yield from content  # TODO: this is now tokenized text, should fix
 
-
-logger = logging.getLogger('eea.corpus')
-
-
-def build_phrase_models(content, cache_path, settings):
-    """ Build and save the phrase models
-    """
-
-    ngram_level = settings['level']
-
-    # According to tee() docs, this may be inefficient in terms of memory.
-    # We need to do this because we need multiple passes through the
-    # content stream.
-    cs1, cs2 = tee(content, 2)
-
-    for i in range(ngram_level-1):
-        phrases = Phrases(cs1)
-        path = "%s.%s" % (cache_path, i + 1)
-        logger.info("Phrase processor: Saving %s", path)
-        phrases.save(path)
-        content = phrases[cs2]  # tokenize phrases in content stream
-        cs1, cs2 = tee(content, 2)
-
-    return iter(content)    # is a gensim TransformedCorpus
+    return cached_phrases()
 
 
-def cached_phrases(cache_path, content):
+def cached_phrases(content, env, settings):
     """ Returns tokenized phrases using saved phrase models.
 
     The phrase models are saved using a commong name, like:
@@ -140,27 +124,35 @@ def cached_phrases(cache_path, content):
     where X is the n-gram level (one of 2,3,4).
 
     The phrase models are loaded and process the content stream.
+
+    We can run in several modes:
+
+        * remove all text but leave the phrases tokens
+        * append the collocations to the document
+        * replace the collocations where they appear
+
+        TODO: implement the above
+
+    If there aren't any cached phrase models, we don't yield anything.
     """
 
     content = chain.from_iterable(doc.tokenized_text for doc in content)
 
-    logger.info("Phrase processor: using phrase models from %s", cache_path)
+    # logger.info("Phrase processor: using phrase models from %s", cache_path)
 
-    phrase_model_files = []
-    base_path, base_name = os.path.split(cache_path)
-    for name in sorted(os.listdir(base_path)):
-        if name.startswith(base_name):
-            phrase_model_files.append(os.path.join(base_path, name))
+    base_path = corpus_base_path(env['file_name'])
+    files = phrase_model_files(base_path, env['phash_id'])
+    if not files:
+        raise StopIteration
 
-    for fpath in phrase_model_files:
+    # TODO: implement filtering modes based on phrases
+    for fpath in files:
         phrases = Phrases.load(fpath)
         content = phrases[content]
 
     # convert list of words back to full text document
-    content = (
-        ". ".join(
-            (" ".join(w for w in sent) for sent in content)
-        )
-    )
-    # TODO: enable this right now
-    # yield from content
+    for doc in content:
+        text = []
+        for sent in doc:
+            text.append(" ".join(sent))
+        yield ". ".join(text)

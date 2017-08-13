@@ -1,4 +1,6 @@
 from collections import namedtuple, OrderedDict
+from eea.corpus.processing.utils import component_phash_id
+from eea.corpus.processing.utils import get_pipeline_for_component
 from eea.corpus.utils import to_doc
 from eea.corpus.utils import upload_location
 import colander
@@ -127,6 +129,14 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
 
     for (component_name, step_id, kwargs) in pipeline:
         env['step_id'] = step_id
+
+        # TODO: worth it to optimize this?
+        phrase_model_pipeline = get_pipeline_for_component(env)
+        phash_id = component_phash_id(
+            file_name, text_column, phrase_model_pipeline
+        )
+        env['phash_id'] = phash_id
+
         component = pipeline_registry[component_name]
         process = component.process
         content_stream = process(content_stream, env, **kwargs)

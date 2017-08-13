@@ -33,6 +33,7 @@ corpus_require = [
     'rq',
     'rq-dashboard',
     'Paste',
+    # 'acidfs',
 ]
 
 

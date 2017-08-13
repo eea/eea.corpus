@@ -74,7 +74,8 @@ class UploadView(FormView):
             fname = upload['filename']
             path = upload_location(fname)
             with open(path, 'wb') as f:
-                f.write(upload['fp'].read())
+                for line in upload['fp']:
+                    f.write(line)
 
         self.request.session.flash(u"Your changes have been saved.")
         return HTTPFound(location='/')
@@ -259,14 +260,12 @@ class CreateCorpusView(FormView):
         kwargs.update(dict(self.form_options))
 
         self.form = Form(schema, renderer=deform_renderer, **kwargs)
-        # print(self.form.buttons)
         return self.form
 
     def _apply_schema_edits(self, schemas, data):
         # assume the schemas have a contigous range of schema_position values
         # assume schemas are properly ordered
 
-        # import pdb; pdb.set_trace()
         for i, s in enumerate(reordered(schemas)):
 
             if "remove_%s_success" % s.name in data:

@@ -13,11 +13,20 @@
 
         <div class="panel panel-default">
           <div class="panel-heading">
-            <a href="/process/${doc.name}/" class="btn btn-primary pull-right">
-              <span class="glyphicon glyphicon-cog"></span>
-              Create a new corpus
-            </a>
-            <h3>${doc.title}</h3>
+            <div class="container-fluid">
+              <div class="row">
+                <div class="col-md-8">
+                  <h4><strong class="panel-title">${doc.title}</strong></h4>
+                </div>
+                <div class="col-md-4">
+                  <a href="/process/${doc.name}/"
+                    class="btn btn-primary btn-sm pull-right">
+                    <span class="glyphicon glyphicon-cog"></span>
+                    Create a new corpus
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="panel-body" tal:condition="doc.corpuses">
             <ul class="list-group" >
