@@ -1,4 +1,4 @@
-from unittest.mock import patch, sentinel as S     # Mock,
+from unittest.mock import patch, Mock, sentinel as S    # , call
 
 
 class TestSchema:
@@ -52,3 +52,24 @@ class TestAsync:
         assert build_phrase_models.call_args[0] == (
             S.content, '/corpus/phash_abc.phras', S.settings
         )
+
+    @patch('eea.corpus.processing.phrases.async.Phrases')
+    def test_build_phrase_models(self, Phrases):
+        from eea.corpus.processing.phrases.async import build_phrase_models
+
+        content = ['hello', 'world']
+
+        phrases = Phrases()
+        Phrases.return_value = phrases
+
+        build_phrase_models(content, '/corpus/some.csv.phras', {'level': 2})
+
+        # call count should be 1, but we called above once
+        assert Phrases.call_count == 2
+        assert phrases.save.call_args[0] == ('/corpus/some.csv.phras.2',)
+
+        build_phrase_models(content, '/corpus/some.csv.phras', {'level': 3})
+
+        # call count should be 1, but it accumulates with the 2 above
+        assert Phrases.call_count == 4
+        assert phrases.save.call_args[0] == ('/corpus/some.csv.phras.3',)

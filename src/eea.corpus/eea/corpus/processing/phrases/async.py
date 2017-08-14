@@ -30,7 +30,7 @@ def build_phrases(pipeline, file_name, text_column, phash_id, settings):
     build_phrase_models(content, cache_path, settings)
 
 
-def build_phrase_models(content, cache_path, settings):
+def build_phrase_models(content, base_path, settings):
     """ Build and save the phrase models
     """
 
@@ -43,10 +43,10 @@ def build_phrase_models(content, cache_path, settings):
 
     for i in range(ngram_level-1):
         phrases = Phrases(cs1)
-        path = "%s.%s" % (cache_path, i + 1)
+        path = "%s.%s" % (base_path, i + 2)     # save path as n-gram level
         logger.info("Phrase processor: Saving %s", path)
         phrases.save(path)
         content = phrases[cs2]  # tokenize phrases in content stream
         cs1, cs2 = tee(content, 2)
 
-    return iter(content)    # is a gensim TransformedCorpus
+    # return iter(content)    # is a gensim TransformedCorpus

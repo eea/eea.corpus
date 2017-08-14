@@ -2,9 +2,10 @@ from eea.corpus.utils import to_doc
 from eea.corpus.utils import to_text
 from unittest.mock import Mock, patch
 from textacy.doc import Doc
+import unittest
 
 
-class TestMiscUtils:
+class TestMiscUtils(unittest.TestCase):
     """ Tests for misc utils
     """
 
@@ -38,7 +39,7 @@ class TestMiscUtils:
         assert document_name(req) == 'first'
 
 
-class TestConvertorDecorators:
+class TestConvertorDecorators(unittest.TestCase):
     """ Tests for stream conversion decorators found in eea.corpus.utils
     """
 
