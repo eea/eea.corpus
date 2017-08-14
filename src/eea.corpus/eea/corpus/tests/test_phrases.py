@@ -357,3 +357,78 @@ class TestProcess:
         assert get_pipeline_for_component.call_count == 1
         assert build_phrases.call_count == 1
         assert cached_phrases.call_count == 1
+
+    @patch('eea.corpus.processing.phrases.process.wait_for_job_finish')
+    @patch('eea.corpus.processing.phrases.process.build_phrases')
+    @patch('eea.corpus.processing.phrases.process.get_pipeline_for_component')
+    @patch('eea.corpus.processing.phrases.process.corpus_base_path')
+    @patch('eea.corpus.processing.phrases.process.get_assigned_job')
+    @patch('eea.corpus.processing.phrases.process.cached_phrases')
+    def test_produce_phrases_with_ok_job(self,
+                                         cached_phrases,
+                                         get_assigned_job,
+                                         corpus_base_path,
+                                         get_pipeline_for_component,
+                                         build_phrases,
+                                         wait_for_job_finish
+                                         ):
+        from eea.corpus.processing.phrases.process import produce_phrases
+        from pkg_resources import resource_filename
+
+        content = ['hello', 'world']
+        env = {'phash_id': 'X', 'file_name': 'x.csv', 'text_column': 'text'}
+        base_path = resource_filename('eea.corpus', 'tests/fixtures/')
+
+        corpus_base_path.return_value = base_path
+        cached_phrases.return_value = ['something', 'else']
+        wait_for_job_finish.return_value = True
+
+        stream = produce_phrases(content, env, {})
+
+        assert list(stream) == ['something', 'else']
+        assert corpus_base_path.call_count == 1
+        assert get_assigned_job.call_count == 1
+        assert get_pipeline_for_component.call_count == 0
+        assert build_phrases.call_count == 0
+        assert cached_phrases.call_count == 1
+
+    @patch('eea.corpus.processing.phrases.process.wait_for_job_finish')
+    @patch('eea.corpus.processing.phrases.process.build_phrases')
+    @patch('eea.corpus.processing.phrases.process.get_pipeline_for_component')
+    @patch('eea.corpus.processing.phrases.process.corpus_base_path')
+    @patch('eea.corpus.processing.phrases.process.get_assigned_job')
+    @patch('eea.corpus.processing.phrases.process.cached_phrases')
+    def test_produce_phrases_with_broken_job(self,
+                                             cached_phrases,
+                                             get_assigned_job,
+                                             corpus_base_path,
+                                             get_pipeline_for_component,
+                                             build_phrases,
+                                             wait_for_job_finish,
+                                             ):
+        from eea.corpus.processing.phrases.process import produce_phrases
+        from pkg_resources import resource_filename
+
+        content = ['hello', 'world']
+        env = {'phash_id': 'X', 'file_name': 'x.csv', 'text_column': 'text'}
+        base_path = resource_filename('eea.corpus', 'tests/fixtures/')
+
+        corpus_base_path.return_value = base_path
+        cached_phrases.return_value = ['something', 'else']
+        wait_for_job_finish.return_value = False
+
+        stream = produce_phrases(content, env, {})
+
+        assert list(stream) == ['something', 'else']
+
+        assert corpus_base_path.call_count == 1
+        assert get_assigned_job.call_count == 1
+        assert get_pipeline_for_component.call_count == 1
+        assert build_phrases.call_count == 1
+        assert cached_phrases.call_count == 1
+
+    def test_wait_for_job_finish(self):
+        from eea.corpus.processing.phrases.process import wait_for_job_finish
+        job = Mock()
+        res = wait_for_job_finish(job)
+        assert res in [True, False]

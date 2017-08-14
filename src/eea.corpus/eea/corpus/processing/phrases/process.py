@@ -125,7 +125,8 @@ def produce_phrases(content, env, settings):
         raise StopIteration
 
     job = get_assigned_job(phash_id)
-    if job is None:     # force build phrases
+    # force build phrases
+    if (job is None) or (job and not wait_for_job_finish(job)):
         phrase_model_pipeline = get_pipeline_for_component(env)
         build_phrases(
             phrase_model_pipeline,
@@ -137,6 +138,12 @@ def produce_phrases(content, env, settings):
         )
 
     yield from cached_phrases(content, env, settings)
+
+
+def wait_for_job_finish(job):
+    """ Wait for the job to finish or abort if job is unable to finish
+    """
+    return False
 
 
 def cached_phrases(content, env, settings):
