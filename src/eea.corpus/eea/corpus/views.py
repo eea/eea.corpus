@@ -21,6 +21,7 @@ from eea.corpus.utils import extract_corpus_id
 from eea.corpus.utils import get_corpus
 from eea.corpus.utils import hashed_id
 from eea.corpus.utils import metadata
+from eea.corpus.utils import rand
 from eea.corpus.utils import upload_location
 from itertools import islice
 from peppercorn import parse
@@ -32,8 +33,6 @@ from pyramid_deform import FormView
 import deform
 import logging
 import pyramid.httpexceptions as exc
-import random
-import string
 import sys
 import traceback as tb
 
@@ -45,10 +44,6 @@ deform_templates = resource_filename('deform', 'templates')
 eeacorpus_templates = resource_filename('eea.corpus', 'templates/deform')
 search_path = (eeacorpus_templates, deform_templates)
 deform_renderer = ZPTRendererFactory(search_path)
-
-
-def rand(n):
-    return ''.join(random.sample(string.ascii_uppercase + string.digits, k=n))
 
 
 @view_config(route_name='home', renderer='templates/home.pt')

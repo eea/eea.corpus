@@ -112,7 +112,7 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
     """
     document_path = upload_location(file_name)
     df = pd.read_csv(document_path)
-    content_stream = df[text_column].__iter__()
+    content_stream = iter(df[text_column])
 
     env = {
         'file_name': file_name,

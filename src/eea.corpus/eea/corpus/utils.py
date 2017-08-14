@@ -9,6 +9,8 @@ import hashlib
 import json
 import logging
 import os
+import random
+import string
 import textacy
 
 
@@ -16,6 +18,10 @@ logger = logging.getLogger('eea.corpus')
 
 
 CORPUS_STORAGE = "/corpus"
+
+
+def rand(n):
+    return ''.join(random.sample(string.ascii_uppercase + string.digits, k=n))
 
 
 def load_corpus(file_name, corpus_id, **kw):

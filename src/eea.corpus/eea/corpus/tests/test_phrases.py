@@ -1,4 +1,5 @@
 from unittest.mock import patch, Mock, sentinel as S    # , call
+import pytest
 
 
 class TestSchema:
@@ -73,3 +74,69 @@ class TestAsync:
         # call count should be 1, but it accumulates with the 2 above
         assert Phrases.call_count == 4
         assert phrases.save.call_args[0] == ('/corpus/some.csv.phras.3',)
+
+    @pytest.mark.slow
+    def test_build_phrase_models_real(self):
+
+        from eea.corpus.processing.phrases.async import build_phrase_models
+        from eea.corpus.utils import rand
+        from gensim.models.phrases import Phrases
+        from itertools import tee, chain
+        from pkg_resources import resource_filename
+        from textacy.doc import Doc
+        import os.path
+        import pandas as pd
+        import tempfile
+
+        fpath = resource_filename('eea.corpus', 'tests/fixtures/test.csv')
+        df = pd.read_csv(fpath)
+
+        column_stream = iter(df['text'])
+        content = chain.from_iterable(
+            Doc(text).tokenized_text for text in column_stream
+        )
+
+        content = (
+          [w.strip().lower() for w in s if w.strip() and w.strip().isalpha()]
+          for s in content
+        )
+
+        content_A, content_B, test_A = tee(content, 3)
+
+        # proof that the content stream can be used for phrases
+        # ph_model = Phrases(stream)
+        # phrases = list(ph_model.export_phrases(sents))
+        # assert phrases[0][0].decode('utf-8') == 'freshwater resources'
+
+        base_dir = tempfile.gettempdir()
+        b_name = rand(10)
+        base_path = os.path.join(base_dir, b_name)
+        build_phrase_models(content_A, base_path, {'level': 2})
+
+        assert b_name + '.2' in os.listdir(base_dir)
+
+        t_name = rand(10)
+        base_path = os.path.join(base_dir, t_name)
+        build_phrase_models(content_B, base_path, {'level': 3})
+
+        assert t_name + '.2' in os.listdir(base_dir)
+        assert t_name + '.3' in os.listdir(base_dir)
+
+        pm2 = Phrases.load(base_path + '.2')
+        pm3 = Phrases.load(base_path + '.3')
+
+        # an iterator of sentences, each a list of words
+        trigrams = pm3[pm2[test_A]]
+        words = chain.from_iterable(trigrams)
+        w2, w3 = tee(words, 2)
+
+        bigrams = [w for w in w2 if w.count('_') == 1]
+        assert len(bigrams) == 19829
+        assert len(set(bigrams)) == 1287
+
+        trigrams = [w for w in w3 if w.count('_') == 2]
+        assert len(trigrams) == 4468
+        assert len(set(trigrams)) == 335
+
+        assert bigrams[0] == 'freshwater_resources'
+        assert trigrams[0] == 'water_stress_conditions'
