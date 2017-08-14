@@ -358,7 +358,7 @@ class TestProcess:
         assert build_phrases.call_count == 1
         assert cached_phrases.call_count == 1
 
-    @patch('eea.corpus.processing.phrases.process.wait_for_job_finish')
+    @patch('eea.corpus.processing.phrases.process.get_job_finish_status')
     @patch('eea.corpus.processing.phrases.process.build_phrases')
     @patch('eea.corpus.processing.phrases.process.get_pipeline_for_component')
     @patch('eea.corpus.processing.phrases.process.corpus_base_path')
