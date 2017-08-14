@@ -19,8 +19,10 @@ from eea.corpus.utils import corpus_base_path
 from gensim.models.phrases import Phrases
 from itertools import chain
 from redis.exceptions import ConnectionError
+from rq.job import JobStatus as JS
 from textacy.doc import Doc
 import logging
+import time
 
 logger = logging.getLogger('eea.corpus')
 
@@ -126,7 +128,7 @@ def produce_phrases(content, env, settings):
 
     job = get_assigned_job(phash_id)
     # force build phrases
-    if (job is None) or (job and not wait_for_job_finish(job)):
+    if (job is None) or (job and not get_job_finish_status(phash_id)):
         phrase_model_pipeline = get_pipeline_for_component(env)
         build_phrases(
             phrase_model_pipeline,
@@ -140,16 +142,59 @@ def produce_phrases(content, env, settings):
     yield from cached_phrases(content, env, settings)
 
 
-def wait_for_job_finish(job):
+def get_job_finish_status(phash_id, timeout=100):
     """ Wait for the job to finish or abort if job is unable to finish
+
+    Job status can be one of:
+        - QUEUED
+        - STARTED
+        - DEFERRED
+        - FINISHED
+        - FAILED
+
+    If the job fails to move from queued, deferred to other states, we will
+    timeout (return False) after the given timeout period.
+
+    A started job has an infinite timeout period.
     """
+
+    cycle = 0
+    os = ''
+
+    while True:
+        job = get_assigned_job(phash_id)
+
+        if job is None:
+            return False
+
+        st = job.get_status()
+
+        if st != os:
+            cycle = 0
+            os = st
+
+        if st == JS.FINISHED:       # TODO: should we check cache paths?
+            return True
+
+        if st == JS.FAILED:
+            return False
+
+        if st == JS.STARTED:        # for started jobs, we wait indefinitely
+            cycle = 0
+
+        time.sleep(timeout)     # sleep 10 seconds
+        cycle += 10
+
+        if cycle >= timeout:
+            break
+
     return False
 
 
 def cached_phrases(content, env, settings):
     """ Returns tokenized phrases using saved phrase models.
 
-    The phrase models are saved using a commong name, like:
+    The phrase models are saved using a common name, like:
 
         <phash_id>.phras.X
 

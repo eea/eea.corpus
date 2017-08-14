@@ -370,7 +370,7 @@ class TestProcess:
                                          corpus_base_path,
                                          get_pipeline_for_component,
                                          build_phrases,
-                                         wait_for_job_finish
+                                         get_job_finish_status
                                          ):
         from eea.corpus.processing.phrases.process import produce_phrases
         from pkg_resources import resource_filename
@@ -381,7 +381,7 @@ class TestProcess:
 
         corpus_base_path.return_value = base_path
         cached_phrases.return_value = ['something', 'else']
-        wait_for_job_finish.return_value = True
+        get_job_finish_status.return_value = True
 
         stream = produce_phrases(content, env, {})
 
@@ -392,7 +392,7 @@ class TestProcess:
         assert build_phrases.call_count == 0
         assert cached_phrases.call_count == 1
 
-    @patch('eea.corpus.processing.phrases.process.wait_for_job_finish')
+    @patch('eea.corpus.processing.phrases.process.get_job_finish_status')
     @patch('eea.corpus.processing.phrases.process.build_phrases')
     @patch('eea.corpus.processing.phrases.process.get_pipeline_for_component')
     @patch('eea.corpus.processing.phrases.process.corpus_base_path')
@@ -404,7 +404,7 @@ class TestProcess:
                                              corpus_base_path,
                                              get_pipeline_for_component,
                                              build_phrases,
-                                             wait_for_job_finish,
+                                             get_job_finish_status,
                                              ):
         from eea.corpus.processing.phrases.process import produce_phrases
         from pkg_resources import resource_filename
@@ -415,7 +415,7 @@ class TestProcess:
 
         corpus_base_path.return_value = base_path
         cached_phrases.return_value = ['something', 'else']
-        wait_for_job_finish.return_value = False
+        get_job_finish_status.return_value = False
 
         stream = produce_phrases(content, env, {})
 
@@ -427,8 +427,76 @@ class TestProcess:
         assert build_phrases.call_count == 1
         assert cached_phrases.call_count == 1
 
-    def test_wait_for_job_finish(self):
-        from eea.corpus.processing.phrases.process import wait_for_job_finish
+
+class TestWaitFinishJob:
+
+    @patch('eea.corpus.processing.phrases.process.time')
+    @patch('eea.corpus.processing.phrases.process.get_assigned_job')
+    def test_get_job_finish_status(self, get_assigned_job, time):
+
+        from eea.corpus.processing.phrases.process import get_job_finish_status
+
+        get_assigned_job.return_value = None
+        assert get_job_finish_status(1) is False
+        assert time.sleep.call_count == 0
+
         job = Mock()
-        res = wait_for_job_finish(job)
-        assert res in [True, False]
+        get_assigned_job.return_value = job
+
+        job.get_status.return_value = 'finished'
+        assert get_job_finish_status(1) is True
+        assert time.sleep.call_count == 0
+
+        job.get_status.return_value = 'failed'
+        assert get_job_finish_status(1) is False
+        assert time.sleep.call_count == 0
+
+        class Timer:
+            """ Factory for a timer function with limited lifetime
+
+            If called for a certain finite amount of times, it will call its
+            breaker function, and possibly affect the global environment
+            """
+
+            def __init__(self, count, breaker):
+                self.count = 0
+                # self.sleep = 0
+                self.maxcount = count
+                self.breaker = breaker
+                self.hit = False
+
+            def __call__(self, s):
+                self.count += 1
+                # self.sleep += s
+                if self.count >= self.maxcount:
+                    self.hit = True
+                    self.breaker()
+
+        def toggle_status(st):
+            job.get_status.return_value = st
+
+        def raise_error():
+            raise ValueError
+
+        # the job changes status too late, we get False as result
+        t = Timer(11, lambda: toggle_status('started'))
+        time.sleep = t
+        job.get_status.return_value = 'queued'
+        assert get_job_finish_status(1) is False
+        assert t.count == 10
+        assert t.hit is False
+
+        # the job changes status just in time, we get True as result
+        t = Timer(9, lambda: toggle_status('finished'))
+        time.sleep = t
+        job.get_status.return_value = 'queued'
+        assert get_job_finish_status(1) is True
+        assert t.hit is True
+        assert t.count == 9
+
+        # a started job will never fail. We'll intrerupt it at count 20
+        t = Timer(20, raise_error)
+        time.sleep = t
+        job.get_status.return_value = 'started'
+        with pytest.raises(ValueError):
+            get_job_finish_status(1)
