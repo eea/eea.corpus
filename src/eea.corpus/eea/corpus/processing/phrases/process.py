@@ -128,7 +128,6 @@ def cached_phrases(content, env, settings):
 
     If there aren't any cached phrase models, we don't yield anything.
     """
-
     content = chain.from_iterable(doc.tokenized_text for doc in content)
 
     base_path = corpus_base_path(env['file_name'])
@@ -143,9 +142,11 @@ def cached_phrases(content, env, settings):
         phrases = Phrases.load(fpath)
         content = phrases[content]
 
+    content = (" ".join(words) for words in content)
+    yield from content
     # convert list of words back to full text document
-    for doc in content:
-        text = []
-        for sent in doc:
-            text.append(" ".join(sent))
-        yield ". ".join(text)
+    # for doc in content:
+    #     text = []
+    #     for sent in doc:
+    #         text.append(" ".join(sent))
+    #     yield ". ".join(text)

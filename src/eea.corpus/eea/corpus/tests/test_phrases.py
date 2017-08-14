@@ -1,4 +1,4 @@
-from unittest.mock import patch, Mock, sentinel as S    # , call
+from unittest.mock import patch, sentinel as S    # , call, Mock,
 import pytest
 
 
@@ -76,30 +76,32 @@ class TestAsync:
         assert phrases.save.call_args[0] == ('/corpus/some.csv.phras.3',)
 
     @pytest.mark.slow
-    def test_build_phrase_models_real(self):
+    def test_build_phrase_models_real(self, simple_content_stream):
 
         from eea.corpus.processing.phrases.async import build_phrase_models
         from eea.corpus.utils import rand
         from gensim.models.phrases import Phrases
         from itertools import tee, chain
-        from pkg_resources import resource_filename
-        from textacy.doc import Doc
         import os.path
-        import pandas as pd
         import tempfile
 
-        fpath = resource_filename('eea.corpus', 'tests/fixtures/test.csv')
-        df = pd.read_csv(fpath)
+        # from pkg_resources import resource_filename
+        # from textacy.doc import Doc
+        # import pandas as pd
+        # fpath = resource_filename('eea.corpus', 'tests/fixtures/test.csv')
+        # df = pd.read_csv(fpath)
+        #
+        # column_stream = iter(df['text'])
+        # content = chain.from_iterable(
+        #     Doc(text).tokenized_text for text in column_stream
+        # )
+        #
+        # content = (
+        #   [w.strip().lower() for w in s if w.strip() and w.strip().isalpha()]
+        #   for s in content
+        # )
 
-        column_stream = iter(df['text'])
-        content = chain.from_iterable(
-            Doc(text).tokenized_text for text in column_stream
-        )
-
-        content = (
-          [w.strip().lower() for w in s if w.strip() and w.strip().isalpha()]
-          for s in content
-        )
+        content = simple_content_stream
 
         content_A, content_B, test_A = tee(content, 3)
 
@@ -114,6 +116,8 @@ class TestAsync:
         build_phrase_models(content_A, base_path, {'level': 2})
 
         assert b_name + '.2' in os.listdir(base_dir)
+        assert not (b_name + '.3' in os.listdir(base_dir))
+        os.remove(base_path + '.2')
 
         t_name = rand(10)
         base_path = os.path.join(base_dir, t_name)
@@ -124,6 +128,9 @@ class TestAsync:
 
         pm2 = Phrases.load(base_path + '.2')
         pm3 = Phrases.load(base_path + '.3')
+
+        os.remove(base_path + '.2')
+        os.remove(base_path + '.3')
 
         # an iterator of sentences, each a list of words
         trigrams = pm3[pm2[test_A]]
@@ -140,3 +147,49 @@ class TestAsync:
 
         assert bigrams[0] == 'freshwater_resources'
         assert trigrams[0] == 'water_stress_conditions'
+
+        # TODO: clean junk from temp folder
+
+
+class TestProcess:
+
+    # @pytest.mark.slow
+    @patch('eea.corpus.processing.phrases.process.corpus_base_path')
+    def test_cached_phrases_no_files(self,
+                                     corpus_base_path,
+                                     doc_content_stream):
+        from eea.corpus.processing.phrases.process import cached_phrases
+        from pkg_resources import resource_filename
+
+        base_path = resource_filename('eea.corpus', 'tests/fixtures/')
+        corpus_base_path.return_value = base_path
+
+        # we want the B.phras.* files in fixtures
+        env = {'phash_id': 'X', 'file_name': 'ignore'}
+        settings = {}
+
+        stream = cached_phrases(doc_content_stream, env, settings)
+        with pytest.raises(StopIteration):
+            next(stream)
+
+    @patch('eea.corpus.processing.phrases.process.corpus_base_path')
+    def test_cached_phrases_cached_files(self,
+                                         corpus_base_path,
+                                         doc_content_stream):
+
+        from eea.corpus.processing.phrases.process import cached_phrases
+        from itertools import islice
+        from pkg_resources import resource_filename
+
+        base_path = resource_filename('eea.corpus', 'tests/fixtures/')
+        corpus_base_path.return_value = base_path
+
+        # we want the B.phras.* files in fixtures
+        env = {'phash_id': 'B', 'file_name': 'ignore'}
+        settings = {}
+
+        stream = cached_phrases(doc_content_stream, env, settings)
+        docs = list(islice(stream, 0, 4))
+        assert 'indicate_that there_was a ' in docs[1]
+        assert 'water_resources per_capita across' in docs[1]
+        assert "under water_stress_conditions in the" in docs[3]

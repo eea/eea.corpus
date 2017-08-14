@@ -9,6 +9,12 @@ class TestMiscUtils(unittest.TestCase):
     """ Tests for misc utils
     """
 
+    def test_rand(self):
+        from eea.corpus.utils import rand
+        x = rand(10)
+        assert len(x) == 10
+        assert x.isalnum()
+
     def test_hashed_id(self):
         from eea.corpus.utils import hashed_id
         assert hashed_id({}) == \
