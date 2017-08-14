@@ -93,19 +93,50 @@ def preview_phrases(content, env, settings):
 
 
 def produce_phrases(content, env, settings):
-    """
+    """ Produce a transformed stream of text.
+
+    If cache files already exist, we do nothing, assuming that the processing
+    function already used them.
+
+    Otherwise, look for an async job already doing phrase model building. If
+    one exists, wait for its status to change, to benefit from its cache files.
+    If no such job exists, produce those files here.
+
+    ``produce_phrases`` is usually called from an async job runner, so we can
+    assume that any other jobs would already have been picked up or failed,
+    but at least there is a queue that is already processing.
     """
 
     # logger.info("Phrase processor: producing phrase model %s", cache_path)
     # content = build_phrase_models(content, cache_path, settings['level'])
 
-    # if running in preview mode, look for an async job already doing
-    # phrase model building
-
     # TODO: enable this right now
     # yield from content  # TODO: this is now tokenized text, should fix
 
-    return cached_phrases()
+    # If saved phrase models exist, we don't do anything, because the
+    # ``cached_phrases`` should have taken care of it
+    file_name = env['file_name']
+    text_column = env['text_column']
+    phash_id = env['phash_id']
+
+    base_path = corpus_base_path(file_name)
+    files = phrase_model_files(base_path, phash_id)
+    if files:
+        raise StopIteration
+
+    job = get_assigned_job(phash_id)
+    if job is None:     # force build phrases
+        phrase_model_pipeline = get_pipeline_for_component(env)
+        build_phrases(
+            phrase_model_pipeline,
+            file_name,
+            text_column,
+            phash_id,
+            settings,
+            meta={'phash_id': phash_id},
+        )
+
+    yield from cached_phrases(content, env, settings)
 
 
 def cached_phrases(content, env, settings):
@@ -128,6 +159,9 @@ def cached_phrases(content, env, settings):
         TODO: implement the above
 
     If there aren't any cached phrase models, we don't yield anything.
+
+    # TODO: should not do from_iterable. This collapses the docs to sentences
+    # and distorts the result stream
     """
     content = chain.from_iterable(doc.tokenized_text for doc in content)
 
@@ -139,8 +173,6 @@ def cached_phrases(content, env, settings):
     logger.info("Phrase processor: using phrase models from %s", base_path)
 
     # TODO: implement filtering modes based on phrases
-    # TODO: should not do from_iterable. This collapses the docs to sentences
-    # and distors the result stream
     for fpath in files:
         phrases = Phrases.load(fpath)
         content = phrases[content]
