@@ -50,7 +50,7 @@ def process(content, env, **settings):       # pipeline, preview_mode,
         yield from produce_phrases(content, env, settings)
 
 
-def preview_phrases(content, env, settings, phash_id):
+def preview_phrases(content, env, settings):
     """ Tokenized phrases in preview mode
 
     When running in preview mode, check for an already running job with this
@@ -61,7 +61,8 @@ def preview_phrases(content, env, settings, phash_id):
     text_column = env['text_column']
     phash_id = env['phash_id']
 
-    # If saved phrase models exist, we don't do anything
+    # If saved phrase models exist, we don't do anything, because the
+    # ``cached_phrases`` should have taken care of it
     base_path = corpus_base_path(file_name)
     files = phrase_model_files(base_path, phash_id)
     if files:
@@ -138,6 +139,8 @@ def cached_phrases(content, env, settings):
     logger.info("Phrase processor: using phrase models from %s", base_path)
 
     # TODO: implement filtering modes based on phrases
+    # TODO: should not do from_iterable. This collapses the docs to sentences
+    # and distors the result stream
     for fpath in files:
         phrases = Phrases.load(fpath)
         content = phrases[content]
