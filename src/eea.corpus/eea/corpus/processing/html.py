@@ -4,6 +4,7 @@
 from bs4 import BeautifulSoup
 from colander import Schema
 from eea.corpus.processing import pipeline_component    # , needs_text_input
+from eea.corpus.utils import to_doc, to_text
 import logging
 
 logger = logging.getLogger('eea.corpus')
@@ -18,6 +19,7 @@ class BeautifulSoupText(Schema):
 @pipeline_component(schema=BeautifulSoupText,
                     title="Strip HTML tags")
 def process(content, env, **settings):
+    content = (to_text(doc) for doc in content)
     for doc in content:
         try:
             soup = BeautifulSoup(doc, 'html.parser')
@@ -29,4 +31,4 @@ def process(content, env, **settings):
             )
             continue
 
-        yield clean
+        yield to_doc(clean)

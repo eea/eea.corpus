@@ -289,6 +289,7 @@ def to_doc(doc):
     if isinstance(doc, str):
         return Doc(doc)
 
+    # what if it's a list of statements, and those a list of words
     if isinstance(doc, list):
         return Doc(" ".join(doc))
 

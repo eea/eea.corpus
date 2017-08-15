@@ -210,8 +210,6 @@ def cached_phrases(content, env, settings):
     # TODO: should not do from_iterable. This collapses the docs to sentences
     # and distorts the result stream
     """
-    content = chain.from_iterable(doc.tokenized_text for doc in content)
-
     base_path = corpus_base_path(env['file_name'])
     files = phrase_model_files(base_path, env['phash_id'])
     if not files:
@@ -220,12 +218,15 @@ def cached_phrases(content, env, settings):
     logger.info("Phrase processor: using phrase models from %s", base_path)
 
     # TODO: implement filtering modes based on phrases
+    content = chain.from_iterable(doc.tokenized_text for doc in content)
+
     for fpath in files:
         phrases = Phrases.load(fpath)
         content = phrases[content]
 
     content = (" ".join(words) for words in content)
     yield from content
+
     # convert list of words back to full text document
     # for doc in content:
     #     text = []
