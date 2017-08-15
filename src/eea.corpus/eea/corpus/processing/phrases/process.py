@@ -109,14 +109,9 @@ def produce_phrases(content, env, settings):
     but at least there is a queue that is already processing.
     """
 
-    # logger.info("Phrase processor: producing phrase model %s", cache_path)
-    # content = build_phrase_models(content, cache_path, settings['level'])
-
-    # TODO: enable this right now
-    # yield from content  # TODO: this is now tokenized text, should fix
-
     # If saved phrase models exist, we don't do anything, because the
     # ``cached_phrases`` should have taken care of it
+
     file_name = env['file_name']
     text_column = env['text_column']
     phash_id = env['phash_id']
@@ -126,10 +121,10 @@ def produce_phrases(content, env, settings):
     if files:
         raise StopIteration
 
-    job = get_assigned_job(phash_id)
-    # force build phrases
-    if (job is None) or (job and not get_job_finish_status(phash_id)):
+    if not get_job_finish_status(phash_id):
+        # something wrong with the job, forcing build phrases
         phrase_model_pipeline = get_pipeline_for_component(env)
+        logger.info("Phrase processor: producing phrase model %s", phash_id)
         build_phrases(
             phrase_model_pipeline,
             file_name,

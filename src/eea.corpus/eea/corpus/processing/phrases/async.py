@@ -46,6 +46,7 @@ def build_phrase_models(content, base_path, settings):
         path = "%s.%s" % (base_path, i + 2)     # save path as n-gram level
         logger.info("Phrase processor: Saving %s", path)
         phrases.save(path)
+        # TODO: gensim complains about not using Phraser(phrases)
         content = phrases[cs2]  # tokenize phrases in content stream
         cs1, cs2 = tee(content, 2)
 
