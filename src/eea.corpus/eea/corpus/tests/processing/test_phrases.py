@@ -160,8 +160,8 @@ class TestProcess:
                                          corpus_base_path,
                                          doc_content_stream):
 
+        # TODO: this test should be improved. Text quality should be tested
         from eea.corpus.processing.phrases.process import cached_phrases
-        from itertools import islice
         from pkg_resources import resource_filename
 
         base_path = resource_filename('eea.corpus', 'tests/fixtures/')
@@ -172,10 +172,9 @@ class TestProcess:
         settings = {}
 
         stream = cached_phrases(doc_content_stream, env, settings)
-        docs = list(islice(stream, 0, 4))
-        assert 'indicate_that there_was a ' in docs[1]
-        assert 'water_resources per_capita across' in docs[1]
-        assert "under water_stress_conditions in the" in docs[3]
+        doc = next(stream)
+        assert 'water_stress_conditions' in doc.text
+        assert 'positive_development' in doc.text
 
     @patch('eea.corpus.processing.phrases.process.produce_phrases')
     @patch('eea.corpus.processing.phrases.process.cached_phrases')

@@ -27,8 +27,7 @@ class LimitResults(Schema):
 def process(content, env, **settings):
     count = settings.get('max_count', 0)
     if not count:
-        for doc in content:
-            yield doc
+        yield from content
     else:
-        for doc in islice(content, 0, count):
-            yield doc
+        content = islice(content, 0, count)
+        yield from content

@@ -1,3 +1,4 @@
+from eea.corpus.utils import to_doc
 from gensim.models.phrases import Phrases
 from itertools import chain, tee
 import logging
@@ -26,24 +27,17 @@ def build_phrase_models(content, base_path, settings):
         content = phrases[cs2]  # tokenize phrases in content stream
         cs1, cs2 = tee(content, 2)
 
-    # return iter(content)    # is a gensim TransformedCorpus
-
 
 def use_phrase_models(content, files, settings):
-    content = chain.from_iterable(doc.tokenized_text for doc in content)
 
-    for fpath in files:
-        phrases = Phrases.load(fpath)
-        content = phrases[content]
+    for doc in content:
+        text = doc.tokenized_text
+        for fpath in files:
+            phrases = Phrases.load(fpath)
+            text = phrases[text]
 
-    content = (" ".join(words) for words in content)
-    yield from content
+        yield to_doc(". ".join(
+            " ".join(sent) for sent in text
+        ))
 
     # TODO: implement filtering modes based on phrases
-
-    # convert list of words back to full text document
-    # for doc in content:
-    #     text = []
-    #     for sent in doc:
-    #         text.append(" ".join(sent))
-    #     yield ". ".join(text)
