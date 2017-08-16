@@ -1,11 +1,11 @@
 from eea.corpus.utils import to_doc
 from eea.corpus.utils import to_text
-from unittest.mock import Mock, patch
 from textacy.doc import Doc
-import unittest
+from unittest.mock import Mock, patch
+import pytest
 
 
-class TestMiscUtils(unittest.TestCase):
+class TestMiscUtils:
     """ Tests for misc utils
     """
 
@@ -27,12 +27,12 @@ class TestMiscUtils(unittest.TestCase):
         req = Mock()
 
         req.matchdict = {}
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             # this is not a valid document name
             document_name(req)
 
         req.matchdict = {'doc': 'first'}
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             # this is not a valid document name
             document_name(req)
 
@@ -45,7 +45,7 @@ class TestMiscUtils(unittest.TestCase):
         assert document_name(req) == 'first'
 
 
-class TestConvertorDecorators(unittest.TestCase):
+class TestConvertorDecorators:
     """ Tests for stream conversion decorators found in eea.corpus.utils
     """
 
@@ -61,6 +61,12 @@ class TestConvertorDecorators(unittest.TestCase):
         assert isinstance(res, Doc)
         assert res.text == 'hello world'
 
+    def test_list_list_to_doc(self):
+        res = to_doc(['hello', 'world'])
+
+        assert isinstance(res, Doc)
+        assert res.text == 'hello world'
+
     def test_doc_to_doc(self):
         doc = Doc('hello world')
         res = to_doc(doc)
@@ -70,7 +76,7 @@ class TestConvertorDecorators(unittest.TestCase):
         assert res.text == 'hello world'
 
     def test_unknown_to_doc(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             to_doc(1)
 
     def test_str_to_text(self):
@@ -86,7 +92,7 @@ class TestConvertorDecorators(unittest.TestCase):
         assert res == 'hello world'
 
     def test_unknown_to_text(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             to_text(1)
 
 

@@ -41,6 +41,8 @@ def worker(config_uri):
 
     pyramid_env = bootstrap(config_uri)
 
+    # this conflicts with normal worker output
+    # TODO: solve logging for the console
     # Setup logging to allow log output from command methods
     # from pyramid.paster import setup_logging
     # setup_logging(config_uri)

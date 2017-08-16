@@ -12,17 +12,15 @@ the phrases need to be detected in the entire corpus. To overcome this, we do:
 from eea.corpus.async import get_assigned_job
 from eea.corpus.processing import pipeline_component
 from eea.corpus.processing.phrases.async import build_phrases
+from eea.corpus.processing.phrases.phrases import use_phrase_models
 from eea.corpus.processing.phrases.schema import PhraseFinder
+from eea.corpus.processing.phrases.utils import get_job_finish_status
 from eea.corpus.processing.phrases.utils import phrase_model_files
 from eea.corpus.processing.utils import get_pipeline_for_component
 from eea.corpus.utils import corpus_base_path
-from gensim.models.phrases import Phrases
-from itertools import chain
+from eea.corpus.utils import to_doc
 from redis.exceptions import ConnectionError
-from rq.job import JobStatus as JS
-from textacy.doc import Doc
 import logging
-import time
 
 logger = logging.getLogger('eea.corpus')
 
@@ -33,16 +31,11 @@ def process(content, env, **settings):       # pipeline, preview_mode,
     """ Phrases detection and processing
     """
 
-    # convert content stream to ``textacy.doc.Doc``
-    # TODO: treat case when doc is a list of words.
-    content = (isinstance(doc, str) and Doc(doc) or doc for doc in content)
+    content = (to_doc(doc) for doc in content)
+
     # TODO: this is just to avoid errors on not installed language models
     # In the future, this should be treated properly or as a pipeline component
     content = (doc for doc in content if doc.lang == 'en')
-
-    # tokenized text is list of statements, chain them to make list of tokens
-    # TODO: is this correct?
-    # content = chain.from_iterable(doc.tokenized_text for doc in content)
 
     yield from cached_phrases(content, env, settings)
 
@@ -82,8 +75,9 @@ def preview_phrases(content, env, settings):
                 text_column,
                 phash_id,
                 settings,
-                meta={'phash_id': phash_id},
             )
+            job.meta = {'phash_id': phash_id}
+            job.save_meta()
             logger.warning("Phrase processing: enqueued a new job %s", job.id)
         except ConnectionError:       # swallow the error
             logger.warning("Phrase processing: could not enqueue a job")
@@ -137,55 +131,6 @@ def produce_phrases(content, env, settings):
     yield from cached_phrases(content, env, settings)
 
 
-def get_job_finish_status(phash_id, timeout=100):
-    """ Wait for the job to finish or abort if job is unable to finish
-
-    Job status can be one of:
-        - QUEUED
-        - STARTED
-        - DEFERRED
-        - FINISHED
-        - FAILED
-
-    If the job fails to move from queued, deferred to other states, we will
-    timeout (return False) after the given timeout period.
-
-    A started job has an infinite timeout period.
-    """
-
-    cycle = 0
-    os = ''
-
-    while True:
-        job = get_assigned_job(phash_id)
-
-        if job is None:
-            return False
-
-        st = job.get_status()
-
-        if st != os:
-            cycle = 0
-            os = st
-
-        if st == JS.FINISHED:       # TODO: should we check cache paths?
-            return True
-
-        if st == JS.FAILED:
-            return False
-
-        if st == JS.STARTED:        # for started jobs, we wait indefinitely
-            cycle = 0
-
-        time.sleep(timeout)     # sleep 10 seconds
-        cycle += 10
-
-        if cycle >= timeout:
-            break
-
-    return False
-
-
 def cached_phrases(content, env, settings):
     """ Returns tokenized phrases using saved phrase models.
 
@@ -217,19 +162,4 @@ def cached_phrases(content, env, settings):
 
     logger.info("Phrase processor: using phrase models from %s", base_path)
 
-    # TODO: implement filtering modes based on phrases
-    content = chain.from_iterable(doc.tokenized_text for doc in content)
-
-    for fpath in files:
-        phrases = Phrases.load(fpath)
-        content = phrases[content]
-
-    content = (" ".join(words) for words in content)
-    yield from content
-
-    # convert list of words back to full text document
-    # for doc in content:
-    #     text = []
-    #     for sent in doc:
-    #         text.append(" ".join(sent))
-    #     yield ". ".join(text)
+    yield from use_phrase_models(content, files, settings)

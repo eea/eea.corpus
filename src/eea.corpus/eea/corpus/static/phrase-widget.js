@@ -29,5 +29,5 @@ function checkPhraseModelStatus() {
 }
 
 jQuery(function(){
-  window.setTimeout(checkPhraseModelStatus, 1000);
+  window.setInterval(checkPhraseModelStatus, 1000);
 });

@@ -45,20 +45,22 @@ class TestAsync:
         corpus_base_path.return_value = '/corpus'
         build_pipeline.return_value = S.content
 
-        build_phrases(S.pipeline, 'some.csv', 'text', 'phash_abc', S.settings)
+        build_phrases([S.step1, S.step2],
+                      'some.csv', 'text', 'phash_abc', S.settings)
 
         corpus_base_path.assert_called_once_with('some.csv')
 
-        assert build_pipeline.call_args[0] == ('some.csv', 'text', S.pipeline)
+        assert build_pipeline.call_args[0] == ('some.csv', 'text', [S.step1])
         assert build_phrase_models.call_args[0] == (
             S.content, '/corpus/phash_abc.phras', S.settings
         )
 
-    @patch('eea.corpus.processing.phrases.async.Phrases')
+    @patch('eea.corpus.processing.phrases.phrases.Phrases')
     def test_build_phrase_models(self, Phrases):
-        from eea.corpus.processing.phrases.async import build_phrase_models
+        from eea.corpus.processing.phrases.phrases import build_phrase_models
+        from textacy.doc import Doc
 
-        content = ['hello', 'world']
+        content = [Doc('hello'), Doc('world')]
 
         phrases = Phrases()
         Phrases.return_value = phrases
@@ -76,16 +78,16 @@ class TestAsync:
         assert phrases.save.call_args[0] == ('/corpus/some.csv.phras.3',)
 
     @pytest.mark.slow
-    def test_build_phrase_models_real(self, simple_content_stream):
+    def test_build_phrase_models_real(self, doc_content_stream):
 
-        from eea.corpus.processing.phrases.async import build_phrase_models
+        from eea.corpus.processing.phrases.phrases import build_phrase_models
         from eea.corpus.utils import rand
         from gensim.models.phrases import Phrases
         from itertools import tee, chain
         import os.path
         import tempfile
 
-        content_A, content_B, test_A = tee(simple_content_stream, 3)
+        content_A, content_B, test_A = tee(doc_content_stream, 3)
 
         # proof that the simple_content_stream can be used for phrases
         # ph_model = Phrases(content_A)
@@ -115,20 +117,21 @@ class TestAsync:
         os.remove(base_path + '.3')
 
         # an iterator of sentences, each a list of words
+        test_A = chain.from_iterable(doc.tokenized_text for doc in test_A)
         trigrams = pm3[pm2[test_A]]
         words = chain.from_iterable(trigrams)
         w2, w3 = tee(words, 2)
 
         bigrams = [w for w in w2 if w.count('_') == 1]
-        assert len(bigrams) == 19829
-        assert len(set(bigrams)) == 1287
+        assert len(bigrams) == 27622
+        assert len(set(bigrams)) == 2060
 
         trigrams = [w for w in w3 if w.count('_') == 2]
-        assert len(trigrams) == 4468
-        assert len(set(trigrams)) == 335
+        assert len(trigrams) == 11268
+        assert len(set(trigrams)) == 706
 
-        assert bigrams[0] == 'freshwater_resources'
-        assert trigrams[0] == 'water_stress_conditions'
+        assert 'freshwater_resources' in bigrams
+        assert 'water_stress_conditions' in trigrams
 
 
 class TestProcess:
@@ -276,16 +279,18 @@ class TestProcess:
         stream = preview_phrases(content, env, {})
         assert list(stream) == ['hello', 'world']
 
+    @patch('eea.corpus.processing.phrases.process.logger')
     @patch('eea.corpus.processing.phrases.process.build_phrases')
     @patch('eea.corpus.processing.phrases.process.get_pipeline_for_component')
     @patch('eea.corpus.processing.phrases.process.get_assigned_job')
     @patch('eea.corpus.processing.phrases.process.corpus_base_path')
     def test_preview_phrases_nocache_files_sched_job(
         self, corpus_base_path, get_assigned_job, get_pipeline_for_component,
-        build_phrases
+        build_phrases, logger
     ):
         from eea.corpus.processing.phrases.process import preview_phrases
         from pkg_resources import resource_filename
+        from redis.exceptions import ConnectionError
 
         get_assigned_job.return_value = None
         base_path = resource_filename('eea.corpus', 'tests/fixtures/')
@@ -298,10 +303,17 @@ class TestProcess:
             'phash_id': 'X',
         }
 
+        build_phrases.delay.side_effect = ConnectionError()
+        stream = preview_phrases(content, env, {})
+        assert list(stream) == ['hello', 'world']
+        assert logger.warning.call_args[0][0] == \
+            "Phrase processing: could not enqueue a job"
+
+        build_phrases.delay.side_effect = None
         stream = preview_phrases(content, env, {})
         assert list(stream) == ['hello', 'world']
 
-        assert build_phrases.delay.call_count == 1
+        assert build_phrases.delay.call_count == 2
 
     @patch('eea.corpus.processing.phrases.process.corpus_base_path')
     @patch('eea.corpus.processing.phrases.process.get_assigned_job')
@@ -329,11 +341,9 @@ class TestProcess:
     @patch('eea.corpus.processing.phrases.process.build_phrases')
     @patch('eea.corpus.processing.phrases.process.get_pipeline_for_component')
     @patch('eea.corpus.processing.phrases.process.corpus_base_path')
-    @patch('eea.corpus.processing.phrases.process.get_assigned_job')
     @patch('eea.corpus.processing.phrases.process.cached_phrases')
     def test_produce_phrases_with_no_job(self,
                                          cached_phrases,
-                                         get_assigned_job,
                                          corpus_base_path,
                                          get_pipeline_for_component,
                                          build_phrases
@@ -348,12 +358,10 @@ class TestProcess:
         corpus_base_path.return_value = base_path
         cached_phrases.return_value = ['something', 'else']
 
-        get_assigned_job.return_value = None
         stream = produce_phrases(content, env, {})
 
         assert list(stream) == ['something', 'else']
         assert corpus_base_path.call_count == 1
-        assert get_assigned_job.call_count == 1
         assert get_pipeline_for_component.call_count == 1
         assert build_phrases.call_count == 1
         assert cached_phrases.call_count == 1
@@ -424,11 +432,11 @@ class TestProcess:
 
 class TestWaitFinishJob:
 
-    @patch('eea.corpus.processing.phrases.process.time')
-    @patch('eea.corpus.processing.phrases.process.get_assigned_job')
+    @patch('eea.corpus.processing.phrases.utils.time')
+    @patch('eea.corpus.processing.phrases.utils.get_assigned_job')
     def test_get_job_finish_status(self, get_assigned_job, time):
 
-        from eea.corpus.processing.phrases.process import get_job_finish_status
+        from eea.corpus.processing.phrases.utils import get_job_finish_status
 
         get_assigned_job.return_value = None
         assert get_job_finish_status(1) is False
