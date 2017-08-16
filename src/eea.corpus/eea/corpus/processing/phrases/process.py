@@ -153,6 +153,7 @@ def get_job_finish_status(phash_id, timeout=100):
     A started job has an infinite timeout period.
     """
 
+    step = 10
     cycle = 0
     os = ''
 
@@ -177,8 +178,8 @@ def get_job_finish_status(phash_id, timeout=100):
         if st == JS.STARTED:        # for started jobs, we wait indefinitely
             cycle = 0
 
-        time.sleep(timeout)     # sleep 10 seconds
-        cycle += 10
+        time.sleep(step)     # sleep 10 seconds
+        cycle += step
 
         if cycle >= timeout:
             break
