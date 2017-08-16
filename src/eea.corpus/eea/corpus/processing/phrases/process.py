@@ -66,6 +66,7 @@ def preview_phrases(content, env, settings):
     logger.info("Phrase processing: need phrase model id %s", phash_id)
 
     job = get_assigned_job(phash_id)
+    job = None
     if job is None:
         phrase_model_pipeline = get_pipeline_for_component(env)
         try:

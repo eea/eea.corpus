@@ -21,7 +21,7 @@ def phrase_model_status(request):
     # TODO: when looking for phrase model files, look for lock files as well
 
     # look for a filename in corpus var folder
-    fname = phash_id + '.phras'
+    fname = phash_id + '.phras.?'
     glob_path = os.path.join(CORPUS_STORAGE, '**', fname)
     files = list(iglob(glob_path, recursive=True))
     if files:
@@ -30,7 +30,7 @@ def phrase_model_status(request):
         }
 
     job = get_assigned_job(phash_id)
-    status = job and ('preview_' + job.get_status()) or 'unavailable'
+    status = job and ('preview_%s' % job.get_status()) or 'unavailable'
     return {
         'status': status
     }
