@@ -25,3 +25,23 @@ class TestHTML:
 
         assert next(content).text == 'Hello world'
         assert next(content).text == 'Just plain text'
+
+    def test_from_text(self, text_column_stream):
+        from eea.corpus.processing.html import process
+        from textacy.doc import Doc
+
+        stream = process(text_column_stream, {})
+
+        doc = next(stream)
+        assert isinstance(doc, Doc)
+        assert doc.text.startswith('assessment-2  Use of freshwater resources')
+
+    def test_from_doc(self, doc_content_stream):
+        from eea.corpus.processing.html import process
+        from textacy.doc import Doc
+
+        stream = process(doc_content_stream, {})
+
+        doc = next(stream)
+        assert isinstance(doc, Doc)
+        assert doc.text.startswith('assessment-2  Use of freshwater resources')

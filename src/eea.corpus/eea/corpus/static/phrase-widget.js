@@ -24,10 +24,14 @@ function checkPhraseModelStatus() {
       setButtonStatus($btn, ok);
       setPanelStatus($panel, ok);
 
+      if (ok) {
+        clearInterval(window._phraseModelInterval);
+      }
+
     });
   });
 }
 
 jQuery(function(){
-  window.setInterval(checkPhraseModelStatus, 1000);
+  window._phraseModelInterval = window.setInterval(checkPhraseModelStatus, 1000);
 });
