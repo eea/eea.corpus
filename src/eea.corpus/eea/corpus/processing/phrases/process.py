@@ -119,14 +119,16 @@ def produce_phrases(content, env, settings):
         # something wrong with the job, forcing build phrases
         phrase_model_pipeline = get_pipeline_for_component(env)
         logger.info("Phrase processor: producing phrase model %s", phash_id)
-        build_phrases(
+        job = build_phrases(
             phrase_model_pipeline,
             file_name,
             text_column,
             phash_id,
             settings,
-            meta={'phash_id': phash_id},
         )
+        job.meta = {'phash_id': phash_id},
+        job.save_meta()
+
 
     yield from cached_phrases(content, env, settings)
 

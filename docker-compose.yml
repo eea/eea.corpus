@@ -10,14 +10,14 @@ services:
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - corpus-data:/corpus
-    command: sh -c "python setup.py develop && pserve production.ini"
+    command: sh -c "pserve production.ini"
 
   redis:
     image: redis
 
   worker:
       image: eeacms/corpus:pyramid_service
-      command: sh -c "python setup.py develop && worker production.ini"
+      command: sh -c "worker production.ini"
       environment:
         - REDIS_URL=redis://redis:6379/0
       volumes:

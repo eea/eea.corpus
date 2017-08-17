@@ -182,8 +182,8 @@ class CreateCorpusView(FormView):
                     p = pipeline_registry[_type]
                     kwargs = state[k].copy()
                     kwargs.pop('schema_type')
-                    position = kwargs.pop('schema_position')
-                    schemas[position] = (p.name, kwargs)
+                    pos = kwargs.pop('schema_position')
+                    schemas[pos] = (p.name, k, kwargs)
 
         return [schemas[k] for k in sorted(schemas.keys())]
 
@@ -197,9 +197,6 @@ class CreateCorpusView(FormView):
                     p = pipeline_registry[_type]
                     s = p.schema(name=k, title=p.title)
                     pos = v.pop('schema_position')
-                    # TODO: remove schema_position from passed form data in show()
-                    # if pos in schemas:
-                    #     import pdb; pdb.set_trace()
                     schemas[pos] = s
 
         # Handle subschemas clicked buttons: perform apropriate operations
@@ -291,7 +288,7 @@ class CreateCorpusView(FormView):
         # positions
         for k, v in appstruct.items():
             if isinstance(v, dict):     # TODO: may not be correct in all cases
-                if v.get('schema_position'):
+                if v.get('schema_position') is not None:
                     v['schema_position'] = schema[k]['schema_position'].default
 
         # now add new schemas, at the end of all others
@@ -300,7 +297,7 @@ class CreateCorpusView(FormView):
             p = pipeline_registry[add_component]
             s = p.schema(name=rand(10), title=p.title,)
             f = s['schema_position']
-            f.default = f.missing = len(schema.children)
+            f.default = f.missing = 999     # len(schema.children)
             schema.add(s)
             appstruct['pipeline_components'] = ''
 

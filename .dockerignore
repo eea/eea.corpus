@@ -70,3 +70,4 @@ pip-selfcheck.json
 corpus/*
 examples/*
 src/eea.corpus/.cache/*
+src/eea.corpus/eea.corpus.egg-info

@@ -31,4 +31,11 @@ def process(content, env, **settings):
             )
             continue
 
-        yield to_doc(clean)
+        try:
+            yield to_doc(clean)
+        except Exception:
+            logger.exception(
+                "BS4 Processor: got an error converting to Doc: %r",
+                doc
+            )
+            continue

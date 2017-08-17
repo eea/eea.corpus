@@ -1,3 +1,6 @@
+from unittest.mock import patch
+
+
 class TestHTML:
     texts = (
         "<strong>Hello</strong> world",
@@ -45,3 +48,12 @@ class TestHTML:
         doc = next(stream)
         assert isinstance(doc, Doc)
         assert doc.text.startswith('assessment-2  Use of freshwater resources')
+
+    @patch('eea.corpus.processing.html.to_doc')
+    def test_to_doc_with_error(self, to_doc):
+        from eea.corpus.processing.html import process
+
+        to_doc.side_effect = ValueError()
+
+        stream = process(['hello', 'world'], {})
+        assert list(stream) == []
