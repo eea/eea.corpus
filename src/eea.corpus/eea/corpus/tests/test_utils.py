@@ -94,39 +94,3 @@ class TestConvertorDecorators:
     def test_unknown_to_text(self):
         with pytest.raises(ValueError):
             to_text(1)
-
-
-# from pyramid import testing
-# import unittest
-# class ViewTests(unittest.TestCase):
-#     def setUp(self):
-#         self.config = testing.setUp()
-#
-#     def tearDown(self):
-#         testing.tearDown()
-#
-#     def test_my_view(self):
-#         from .views import my_view
-#         request = testing.DummyRequest()
-#         info = my_view(request)
-#         self.assertEqual(info['project'], 'EEA Corpus Server')
-#
-#
-# class FunctionalTests(unittest.TestCase):
-#     def setUp(self):
-#         from eea_corpus import main
-#         app = main({})
-#         from webtest import TestApp
-#         self.testapp = TestApp(app)
-#
-#     def test_root(self):
-#         res = self.testapp.get('/', status=200)
-#         self.assertTrue(b'Pyramid' in res.body)
-# def test_doctest():
-#     finder = doctest.DocTestFinder(exclude_empty=False)
-#     suite = doctest.DocTestSuite(test_finder=finder)
-#     suite.run()
-#
-# def load_tests(loader, tests, ignore):
-#     from eea.corpus import utils
-#     tests.addTests(doctest.DocTestSuite(utils))

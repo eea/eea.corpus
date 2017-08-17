@@ -25,7 +25,7 @@ function checkPhraseModelStatus() {
       setPanelStatus($panel, ok);
 
       if (ok) {
-        clearInterval(window._phraseModelInterval);
+        clearInterval(window._PMI);
       }
 
     });
@@ -33,5 +33,6 @@ function checkPhraseModelStatus() {
 }
 
 jQuery(function(){
-  window._phraseModelInterval = window.setInterval(checkPhraseModelStatus, 1000);
+  window._PMI = window.setInterval(checkPhraseModelStatus, 2000);
+  checkPhraseModelStatus();
 });

@@ -22,6 +22,8 @@ from eea.corpus.utils import get_corpus
 from eea.corpus.utils import hashed_id
 from eea.corpus.utils import metadata
 from eea.corpus.utils import rand
+from eea.corpus.utils import reordered_schemas
+from eea.corpus.utils import schema_defaults
 from eea.corpus.utils import upload_location
 from itertools import islice
 from peppercorn import parse
@@ -137,24 +139,6 @@ class TopicsView(FormView):
         self.vis = out
 
 
-def schema_defaults(schema):
-    """ Returns a mapping of fielname:defaultvalue
-    """
-    res = {}
-    for child in schema.children:
-        res[child.name] = child.default or child.missing
-    return res
-
-
-def reordered(ss):
-    """ Utility method to set incremental values to the schema_position fields
-    """
-    for i, s in enumerate(ss):
-        f = s['schema_position']
-        f.default = f.missing = i
-    return ss
-
-
 @view_config(
     route_name="process_csv",
     renderer="templates/create_corpus.pt"
@@ -181,6 +165,8 @@ class CreateCorpusView(FormView):
         It uses the request to understand the structure of the pipeline. The
         significant elements of that structure are the pipeline component name,
         its position in the schema and its settings.
+
+        It's only used on in generate_corpus_success in this form.
         """
 
         data = parse(self.request.POST.items())
@@ -200,6 +186,25 @@ class CreateCorpusView(FormView):
                     schemas[position] = (p.name, kwargs)
 
         return [schemas[k] for k in sorted(schemas.keys())]
+
+    def _extract_pipeline_schemas(self):
+        data = parse(self.request.POST.items())
+        schemas = {}
+        for k, v in data.items():
+            if isinstance(v, dict):   # might be a schema cstruct
+                _type = v.pop('schema_type', None)
+                if _type is not None:       # yeap, a schema
+                    p = pipeline_registry[_type]
+                    s = p.schema(name=k, title=p.title)
+                    pos = v.pop('schema_position')
+                    # TODO: remove schema_position from passed form data in show()
+                    # if pos in schemas:
+                    #     import pdb; pdb.set_trace()
+                    schemas[pos] = s
+
+        # Handle subschemas clicked buttons: perform apropriate operations
+        schemas = [schemas[i] for i in sorted(schemas.keys())]
+        return schemas
 
     def preview_success(self, appstruct):
         # preview is done by show()
@@ -225,22 +230,6 @@ class CreateCorpusView(FormView):
         raise exc.HTTPFound('/view/%s/%s/job/%s' %
                             (self.document, corpus_id, job.id))
 
-    def _extract_pipeline_schemas(self):
-        data = parse(self.request.POST.items())
-        schemas = {}
-        for k, v in data.items():
-            if isinstance(v, dict):   # might be a schema cstruct
-                _type = v.pop('schema_type', None)
-                if _type is not None:       # yeap, a schema
-                    p = pipeline_registry[_type]
-                    s = p.schema(name=k, title=p.title)
-                    pos = v.pop('schema_position')
-                    schemas[pos] = s
-
-        # Handle subschemas clicked buttons: perform apropriate operations
-        schemas = [schemas[i] for i in sorted(schemas.keys())]
-        return schemas
-
     def form_class(self, schema, **kwargs):
         data = parse(self.request.POST.items())
         schemas = self._extract_pipeline_schemas()
@@ -261,11 +250,11 @@ class CreateCorpusView(FormView):
         # assume the schemas have a contigous range of schema_position values
         # assume schemas are properly ordered
 
-        for i, s in enumerate(reordered(schemas)):
+        for i, s in enumerate(reordered_schemas(schemas)):
 
             if "remove_%s_success" % s.name in data:
                 del schemas[i]
-                return reordered(schemas)
+                return reordered_schemas(schemas)
 
             if "move_up_%s_success" % s.name in data:
                 if i == 0:
@@ -274,7 +263,7 @@ class CreateCorpusView(FormView):
                 this, other = schemas[i], schemas[i-1]
                 schemas[i-1] = this
                 schemas[i] = other
-                return reordered(schemas)
+                return reordered_schemas(schemas)
 
             if "move_down_%s_success" % s.name in data:
                 if i == len(schemas) - 1:
@@ -283,13 +272,9 @@ class CreateCorpusView(FormView):
                 this, other = schemas[i], schemas[i+1]
                 schemas[i+1] = this
                 schemas[i] = other
-                return reordered(schemas)
+                return reordered_schemas(schemas)
 
         return schemas
-
-    @property
-    def form_options(self):
-        return (('asta', 'este'),)
 
     def show(self, form):
         # re-validate form, it is possible to be changed
