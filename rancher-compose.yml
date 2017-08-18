@@ -2,3 +2,5 @@ version: '2'
 services:
   pyramid:
     scale: 1
+  worker:
+    scale: 2
