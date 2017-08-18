@@ -12,16 +12,16 @@ services:
       - corpus-data:/corpus
     command: sh -c "pserve production.ini"
 
-  redis:
-    image: redis
-
   worker:
-      image: eeacms/corpus:pyramid_service
+      image: eeacms/corpus:latest
       command: sh -c "worker production.ini"
       environment:
         - REDIS_URL=redis://redis:6379/0
       volumes:
         - corpus-data:/corpus
+
+  redis:
+    image: redis
 
 volumes:
   corpus-data:
