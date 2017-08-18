@@ -33,13 +33,12 @@ class TestCreateCorpus:
 
         LimitSchema = pr['eea_corpus_processing_limit_process'].schema
         HTMLSchema = pr['eea_corpus_processing_html_process'].schema
-        PreprocessSchema = pr['eea_corpus_processing_preprocess_process'].\
-            schema
+        PrepSchema = pr['eea_corpus_processing_preprocess_process'].schema
 
         schemas = [
             LimitSchema(name='1st'),
             HTMLSchema(name='2st'),
-            PreprocessSchema(name='3st'),
+            PrepSchema(name='3st'),
         ]
 
         req = testing.DummyRequest()
@@ -48,3 +47,5 @@ class TestCreateCorpus:
         assert [x.name for x in res] == [
             '1st', '2st', '3st'
         ]
+
+        # TODO: finish test

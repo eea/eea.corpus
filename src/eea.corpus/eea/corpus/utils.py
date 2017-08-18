@@ -337,3 +337,18 @@ def reordered_schemas(schemas):
         f.default = f.missing = i
 
     return schemas
+
+
+def tokenize(phrase, delimiter='_'):
+    """ Tokenizes a phrase (converts those words to a unique token)
+    """
+
+    words = phrase.split(' ')
+    res = []
+
+    # remove the 's in text
+    for w in words:
+        w = w.split("'")[0]
+        res.append(w)
+
+    return delimiter.join(res)

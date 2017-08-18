@@ -129,7 +129,6 @@ def produce_phrases(content, env, settings):
         job.meta = {'phash_id': phash_id},
         job.save_meta()
 
-
     yield from cached_phrases(content, env, settings)
 
 

@@ -160,13 +160,13 @@ class CreateCorpusView(FormView):
         return document_name(self.request)
 
     def get_pipeline_components(self):
-        """ Returns a pipeline, a list of (process, arguments)
+        """ Returns a pipeline, a list of (process, schema name, arguments)
 
         It uses the request to understand the structure of the pipeline. The
         significant elements of that structure are the pipeline component name,
         its position in the schema and its settings.
 
-        It's only used on in generate_corpus_success in this form.
+        It's only used in ``generate_corpus_success`` in this form.
         """
 
         data = parse(self.request.POST.items())
@@ -188,6 +188,9 @@ class CreateCorpusView(FormView):
         return [schemas[k] for k in sorted(schemas.keys())]
 
     def _extract_pipeline_schemas(self):
+        """ Returns a list of schemas, to be used in ``Form`` instantiation.
+        """
+
         data = parse(self.request.POST.items())
         schemas = {}
         for k, v in data.items():
