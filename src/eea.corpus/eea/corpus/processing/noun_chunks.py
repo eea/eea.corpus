@@ -42,17 +42,22 @@ def process(content, env, **settings):
     mode = settings.get('mode', 'tokenize')
 
     for doc in content:
-        ncs = doc.spacy_doc.noun_chunks
+        try:
+            ncs = [x.text for x in doc.spacy_doc.noun_chunks]
+        except Exception:
+            logger.exception("Error extracting noun chunks %r", doc)
+            continue
+
         text = doc.text
 
         # TODO: see if able to use Doc.merge for replacements
         if mode == 'tokenize':
             for nc in ncs:
-                text = text.replace(nc.text, tokenize(nc.text))
+                text = text.replace(nc, tokenize(nc))
         if mode == 'append':
-            text = ' '.join([text] + [tokenize(nc.text) for nc in ncs])
+            text = ' '.join([text] + [tokenize(nc) for nc in ncs])
         if mode == 'replace':
-            text = ' '.join([tokenize(nc.text) for nc in ncs])
+            text = ' '.join([tokenize(nc) for nc in ncs])
 
         try:
             yield Doc(text)

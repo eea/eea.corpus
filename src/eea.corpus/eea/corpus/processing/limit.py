@@ -15,8 +15,8 @@ class LimitResults(Schema):
 
     max_count = SchemaNode(
         Int(),
-        default=0,
-        missing=0,
+        default=10,
+        missing=10,
         title='Results limit',
         description='Set to 0 if you want unlimited results',
     )
@@ -25,7 +25,7 @@ class LimitResults(Schema):
 @pipeline_component(schema=LimitResults,
                     title="Limit number of results")
 def process(content, env, **settings):
-    count = settings.get('max_count', 0)
+    count = settings.get('max_count', 10)
     if not count:
         yield from content
     else:
