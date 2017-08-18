@@ -16,7 +16,7 @@ algorthims that can be run on top of the EEA Corpus or a subset of it.
 First upload a CSV file, then use the "Create a corpus" button to enter
 the pipeline composition page.
 
-### C*reate and visualise topic models via pyLDAvis.
+### Create and visualise topic models via pyLDAvis.
 
 The topics are found via a text-mining technique called
 [Topic Modeling](https://en.wikipedia.org/wiki/Topic_model).
@@ -37,7 +37,7 @@ docker-compose up -d
 ```
 
 This will (after some time) start the EEA Corpus application server on
-[localhost:8181]*(http://0.0.0.0:8181)
+[localhost:8181](http://0.0.0.0:8181)
 
 ## EEA Corpus Data
 
