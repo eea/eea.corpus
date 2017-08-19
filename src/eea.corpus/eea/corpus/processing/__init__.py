@@ -77,12 +77,12 @@ def pipeline_component(schema, title, actions=None):
                     default=uid,
                     missing=uid,
                 )
-                schema_position = colander.SchemaNode(
-                    colander.Int(),
-                    widget=deform.widget.HiddenWidget(),
-                    default=-1,
-                    missing=-1,
-                )
+                # schema_position = colander.SchemaNode(
+                #     colander.Int(),
+                #     # widget=deform.widget.HiddenWidget(),
+                #     default=-1,
+                #     missing=-1,
+                # )
 
             p = Processor(uid, WrappedSchema, func, title, actions=[])
             pipeline_registry[uid] = p

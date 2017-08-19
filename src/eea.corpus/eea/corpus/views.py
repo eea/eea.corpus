@@ -22,7 +22,6 @@ from eea.corpus.utils import get_corpus
 from eea.corpus.utils import hashed_id
 from eea.corpus.utils import metadata
 from eea.corpus.utils import rand
-from eea.corpus.utils import reordered_schemas
 from eea.corpus.utils import schema_defaults
 from eea.corpus.utils import upload_location
 from itertools import islice
@@ -159,6 +158,21 @@ class CreateCorpusView(FormView):
     def document(self):
         return document_name(self.request)
 
+    def _get_sorted_component_names(self, request):
+        """ Returns a list of (component names, params) from request
+        """
+
+        data = parse(request.POST.items())
+        schemas = []        # establish position of widgets
+        for k, v in self.request.POST.items():
+            if (k == '__start__') and (':mapping' in v):
+                sk = v.split(':')[0]
+                parms = data[sk]
+                if isinstance(parms, dict) and parms.get('schema_type', None):
+                        schemas.append((sk, data[sk]))
+
+        return schemas
+
     def get_pipeline_components(self):
         """ Returns a pipeline, a list of (process, schema name, arguments)
 
@@ -169,41 +183,27 @@ class CreateCorpusView(FormView):
         It's only used in ``generate_corpus_success`` in this form.
         """
 
-        data = parse(self.request.POST.items())
-        state = self.schema.deserialize(data)
+        schemas = []
 
-        # recreate existing schemas.
-        schemas = {}
+        for name, params in self._get_sorted_component_names(self.request):
+            kwargs = params.copy()
+            kwargs.pop('schema_type')
+            s = (params['schema_type'], name, kwargs)
+            schemas.append(s)
 
-        for k, v in data.items():
-            if isinstance(v, dict):   # might be a schema cstruct
-                _type = v.pop('schema_type', None)
-                if _type is not None:       # yeap, a schema
-                    p = pipeline_registry[_type]
-                    kwargs = state[k].copy()
-                    kwargs.pop('schema_type')
-                    pos = kwargs.pop('schema_position')
-                    schemas[pos] = (p.name, k, kwargs)
+        return schemas
 
-        return [schemas[k] for k in sorted(schemas.keys())]
-
-    def _extract_pipeline_schemas(self):
+    def _schemas(self):
         """ Returns a list of schemas, to be used in ``Form`` instantiation.
         """
 
-        data = parse(self.request.POST.items())
-        schemas = {}
-        for k, v in data.items():
-            if isinstance(v, dict):   # might be a schema cstruct
-                _type = v.pop('schema_type', None)
-                if _type is not None:       # yeap, a schema
-                    p = pipeline_registry[_type]
-                    s = p.schema(name=k, title=p.title)
-                    pos = v.pop('schema_position')
-                    schemas[pos] = s
+        schemas = []
+        for name, params in self._get_sorted_component_names(self.request):
+            _type = params['schema_type']
+            p = pipeline_registry[_type]
+            s = p.schema(name=name, title=p.title)
+            schemas.append(s)
 
-        # Handle subschemas clicked buttons: perform apropriate operations
-        schemas = [schemas[i] for i in sorted(schemas.keys())]
         return schemas
 
     def preview_success(self, appstruct):
@@ -232,7 +232,8 @@ class CreateCorpusView(FormView):
 
     def form_class(self, schema, **kwargs):
         data = parse(self.request.POST.items())
-        schemas = self._extract_pipeline_schemas()
+
+        schemas = self._schemas()
         schemas = self._apply_schema_edits(schemas, data)
         for s in schemas:
             schema.add(s)
@@ -250,11 +251,11 @@ class CreateCorpusView(FormView):
         # assume the schemas have a contigous range of schema_position values
         # assume schemas are properly ordered
 
-        for i, s in enumerate(reordered_schemas(schemas)):
+        for i, s in enumerate(schemas):
 
             if "remove_%s_success" % s.name in data:
                 del schemas[i]
-                return reordered_schemas(schemas)
+                return schemas
 
             if "move_up_%s_success" % s.name in data:
                 if i == 0:
@@ -263,7 +264,7 @@ class CreateCorpusView(FormView):
                 this, other = schemas[i], schemas[i-1]
                 schemas[i-1] = this
                 schemas[i] = other
-                return reordered_schemas(schemas)
+                return schemas
 
             if "move_down_%s_success" % s.name in data:
                 if i == len(schemas) - 1:
@@ -272,7 +273,7 @@ class CreateCorpusView(FormView):
                 this, other = schemas[i], schemas[i+1]
                 schemas[i+1] = this
                 schemas[i] = other
-                return reordered_schemas(schemas)
+                return schemas
 
         return schemas
 
@@ -287,28 +288,17 @@ class CreateCorpusView(FormView):
                 return self.failure(e)
 
         schema = form.schema
-        # fix schema position in appstruct, according to calculated schema
-        # positions
-        for k, v in appstruct.items():
-            if isinstance(v, dict):     # TODO: may not be correct in all cases
-                if v.get('schema_position') is not None:
-                    v['schema_position'] = schema[k]['schema_position'].default
-
         # now add new schemas, at the end of all others
         add_component = appstruct.get('pipeline_components')
         if add_component:
             p = pipeline_registry[add_component]
             s = p.schema(name=rand(10), title=p.title,)
-            f = s['schema_position']
-            f.default = f.missing = 999     # len(schema.children)
             schema.add(s)
             appstruct['pipeline_components'] = ''
 
         # move pipeline_components to the bottom
         w = schema.__delitem__('pipeline_components')
         schema.add(w)
-
-        # handle processing actions, as appropriately
 
         # try to build a preview, if possible
         if appstruct.get('column'):
@@ -324,7 +314,6 @@ class CreateCorpusView(FormView):
                         kw = schema_defaults(c)
 
                     # remove auxiliary fields that are not expected as args
-                    kw.pop('schema_position', None)
                     kw.pop('schema_type', None)
 
                     p = pipeline_registry[_type.default]
@@ -343,6 +332,7 @@ class CreateCorpusView(FormView):
         form = Form(schema, buttons=self.buttons, renderer=deform_renderer,
                     **dict(self.form_options))
         reqts = form.get_widget_resources()
+
         return {
             'form': form.render(appstruct),
             'css_links': reqts['css'],

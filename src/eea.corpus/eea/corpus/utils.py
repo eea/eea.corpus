@@ -329,16 +329,6 @@ def schema_defaults(schema):
     return res
 
 
-def reordered_schemas(schemas):
-    """ Utility method to set incremental values to the schema_position fields
-    """
-    for i, s in enumerate(schemas):
-        f = s['schema_position']
-        f.default = f.missing = i
-
-    return schemas
-
-
 def tokenize(phrase, delimiter='_'):
     """ Tokenizes a phrase (converts those words to a unique token)
     """
