@@ -287,12 +287,12 @@ def to_doc(doc):
         return doc
 
     if isinstance(doc, str):
-        return Doc(doc)
+        return Doc(doc, lang='en')
 
     # TODO: what if it's a list of statements, and those a list of words
     if isinstance(doc, list):
         assert not isinstance(doc[0], (list, tuple))
-        return Doc(" ".join(doc))
+        return Doc(" ".join(doc), lang='en')
 
     raise ValueError("Unknown value type to convert to textacy.doc.Doc")
 
