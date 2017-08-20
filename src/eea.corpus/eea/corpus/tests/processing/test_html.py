@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 
 class TestHTML:
@@ -11,14 +11,6 @@ class TestHTML:
         from eea.corpus.processing.html import BeautifulSoupText
         assert len(BeautifulSoupText().children) == 0
 
-    def test_clean_text(self):
-        from eea.corpus.processing.html import process
-
-        content = process(self.texts, {})
-
-        assert next(content).text == 'Hello world'
-        assert next(content).text == 'Just plain text'
-
     def test_clean_docs(self):
         from eea.corpus.processing.html import process
         from textacy.doc import Doc
@@ -29,31 +21,12 @@ class TestHTML:
         assert next(content).text == 'Hello world'
         assert next(content).text == 'Just plain text'
 
-    def test_from_text(self, text_column_stream):
-        from eea.corpus.processing.html import process
-        from textacy.doc import Doc
-
-        stream = process(text_column_stream, {})
-
-        doc = next(stream)
-        assert isinstance(doc, Doc)
-        assert doc.text.startswith('assessment-2  Use of freshwater resources')
-
-    def test_from_doc(self, doc_content_stream):
-        from eea.corpus.processing.html import process
-        from textacy.doc import Doc
-
-        stream = process(doc_content_stream, {})
-
-        doc = next(stream)
-        assert isinstance(doc, Doc)
-        assert doc.text.startswith('assessment-2  Use of freshwater resources')
-
-    @patch('eea.corpus.processing.html.to_doc')
-    def test_to_doc_with_error(self, to_doc):
+    @patch('eea.corpus.processing.html.set_text')
+    def test_set_text_with_error(self, set_text):
         from eea.corpus.processing.html import process
 
-        to_doc.side_effect = ValueError()
+        set_text.side_effect = ValueError()
+        doc = Mock(text='hello world')
 
-        stream = process(['hello', 'world'], {})
+        stream = process([doc], {})
         assert list(stream) == []

@@ -1,4 +1,4 @@
-from eea.corpus.utils import to_doc
+from eea.corpus.utils import set_text
 from gensim.models.phrases import Phrases
 from itertools import chain, tee
 import logging
@@ -36,8 +36,7 @@ def use_phrase_models(content, files, settings):
             phrases = Phrases.load(fpath)
             text = phrases[text]
 
-        yield to_doc(". ".join(
-            " ".join(sent) for sent in text
-        ))
+        text = ". ".join([" ".join(sent) for sent in text])
+        yield set_text(doc, text)
 
     # TODO: implement filtering modes based on phrases

@@ -1,10 +1,6 @@
-# TODO: keep the metadata stream
-
-# from textacy.fileio import split_record_fields
 from __future__ import unicode_literals
 from collections import defaultdict
 from textacy.doc import Doc
-import functools
 import hashlib
 import json
 import logging
@@ -231,83 +227,11 @@ def hashed_id(items):
     return m.hexdigest()
 
 
-def needs_tokenized_input(func):
-    """ A decorator to make sure input stream comes as textacy.Doc objs
-
-    Example:
-
-    @needs_tokenized_input
-    def process(content, **settings):
-        for doc in content:
-            for token in doc:
-                print(token)
-
-    # TODO: refactor as a list of convertors that can be passed to processing
-    # functions?
-    """
-
-    @functools.wraps(func)
-    def wrapper(content, **settings):
-        for doc in content:
-            if isinstance(doc, str):       # doc is list of sentences
-                # tokenize using textacy
-                # TODO: compare performance, nltk punkt
-                yield next(func([Doc(doc).tokenized_text], **settings))
-                continue
-
-            yield next(func([doc], **settings))
-
-    return wrapper
-
-
-def needs_text_input(func):
-    """ A decorator to make sure input stream comes as plain strings
-
-    Example:
-
-    @needs_text_input
-    def process(content, **settings):
-        for doc in content:
-            print(doc)
-    """
-
-    @functools.wraps(func)
-    def wrapper(content, **settings):
-        content = (to_text(doc) for doc in content)
-        return func(content, **settings)
-
-    return wrapper
-
-
-def to_doc(doc):
+def set_text(doc, text):
     """ A function that converts any possible input type to a textacy Doc
     """
 
-    if isinstance(doc, Doc):
-        return doc
-
-    if isinstance(doc, str):
-        return Doc(doc, lang='en')
-
-    # TODO: what if it's a list of statements, and those a list of words
-    if isinstance(doc, list):
-        assert not isinstance(doc[0], (list, tuple))
-        return Doc(" ".join(doc), lang='en')
-
-    raise ValueError("Unknown value type to convert to textacy.doc.Doc")
-
-
-def to_text(doc):
-    if isinstance(doc, str):
-        return doc
-
-    if isinstance(doc, Doc):
-        return doc.text
-
-    if isinstance(doc, list):   # assume a list of words
-        return " ".join(doc)
-
-    raise ValueError("Unknown value type to convert to str")
+    return Doc(text, metadata=doc.metadata, lang='en')
 
 
 def is_locked(fpath):

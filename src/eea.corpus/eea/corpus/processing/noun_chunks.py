@@ -1,7 +1,6 @@
 from colander import Schema
 from eea.corpus.processing import pipeline_component
-from eea.corpus.utils import to_doc, tokenize
-from textacy.doc import Doc
+from eea.corpus.utils import tokenize, set_text
 import colander
 import deform.widget
 import logging
@@ -37,8 +36,6 @@ def process(content, env, **settings):
     """ Noun Chunks processing
     """
 
-    content = (to_doc(doc) for doc in content)
-
     mode = settings.get('mode', 'tokenize')
 
     for doc in content:
@@ -60,7 +57,7 @@ def process(content, env, **settings):
             text = ' '.join([tokenize(nc) for nc in ncs])
 
         try:
-            yield Doc(text)
+            yield set_text(doc, text)
         except Exception:
             logger.exception("Error in converting to Doc %r", text)
             continue

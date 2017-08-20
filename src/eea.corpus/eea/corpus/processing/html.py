@@ -4,7 +4,7 @@
 from bs4 import BeautifulSoup
 from colander import Schema
 from eea.corpus.processing import pipeline_component    # , needs_text_input
-from eea.corpus.utils import to_doc, to_text
+from eea.corpus.utils import set_text
 import logging
 
 logger = logging.getLogger('eea.corpus')
@@ -19,10 +19,10 @@ class BeautifulSoupText(Schema):
 @pipeline_component(schema=BeautifulSoupText,
                     title="Strip HTML tags")
 def process(content, env, **settings):
-    content = (to_text(doc) for doc in content)
     for doc in content:
+        text = doc.text
         try:
-            soup = BeautifulSoup(doc, 'html.parser')
+            soup = BeautifulSoup(text, 'html.parser')
             clean = soup.get_text()
         except Exception:
             logger.exception(
@@ -32,7 +32,7 @@ def process(content, env, **settings):
             continue
 
         try:
-            yield to_doc(clean)
+            yield set_text(doc, clean)
         except Exception:
             logger.exception(
                 "BS4 Processor: got an error converting to Doc: %r",

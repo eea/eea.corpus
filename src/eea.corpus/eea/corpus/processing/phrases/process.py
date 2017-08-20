@@ -18,7 +18,6 @@ from eea.corpus.processing.phrases.utils import get_job_finish_status
 from eea.corpus.processing.phrases.utils import phrase_model_files
 from eea.corpus.processing.utils import get_pipeline_for_component
 from eea.corpus.utils import corpus_base_path
-from eea.corpus.utils import to_doc
 from redis.exceptions import ConnectionError
 import logging
 
@@ -30,12 +29,6 @@ logger = logging.getLogger('eea.corpus')
 def process(content, env, **settings):       # pipeline, preview_mode,
     """ Phrases detection and processing
     """
-
-    content = (to_doc(doc) for doc in content)
-
-    # TODO: this is just to avoid errors on not installed language models
-    # In the future, this should be treated properly or as a pipeline component
-    content = (doc for doc in content if doc.lang == 'en')
 
     yield from cached_phrases(content, env, settings)
 

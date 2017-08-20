@@ -3,16 +3,6 @@ class TestPreprocess:
         from eea.corpus.processing.preprocess import TextacyPreprocess
         assert len(TextacyPreprocess().children) == 11
 
-    def test_from_text(self, text_column_stream):
-        from eea.corpus.processing.preprocess import process
-        from textacy.doc import Doc
-
-        stream = process(text_column_stream, {})
-
-        doc = next(stream)
-        assert isinstance(doc, Doc)
-        assert doc.text.startswith('assessment-2 Use of freshwater resources')
-
     def test_from_doc(self, doc_content_stream):
         from eea.corpus.processing.preprocess import process
         from textacy.doc import Doc

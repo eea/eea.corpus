@@ -169,7 +169,7 @@ class CreateCorpusView(FormView):
                 sk = v.split(':')[0]
                 parms = data[sk]
                 if isinstance(parms, dict) and parms.get('schema_type', None):
-                        schemas.append((sk, data[sk]))
+                    schemas.append((sk, data[sk]))
 
         return schemas
 
@@ -183,18 +183,40 @@ class CreateCorpusView(FormView):
         It's only used in ``generate_corpus_success`` in this form.
         """
 
-        schemas = []
+        pipeline = []
 
         for name, params in self._get_sorted_component_names(self.request):
             kwargs = params.copy()
             kwargs.pop('schema_type')
             s = (params['schema_type'], name, kwargs)
-            schemas.append(s)
+            pipeline.append(s)
 
-        return schemas
+        return pipeline
+
+    def pipeline_from_schema(self, schema, appstruct):
+
+        # the difference to _get_sorted_component_names is that here
+        # we loop over schema children and need to have default params when
+        # schema is newly added
+        pipeline = []
+
+        for c in schema.children:
+            _type = c.get('schema_type')
+            if _type:
+                # assume mapping schema
+                kw = appstruct.get(c.name, schema_defaults(c)).copy()
+
+                # remove auxiliary fields that are not expected as args
+                kw.pop('schema_type', None)
+
+                # TODO: is the pipeline_registry here needed?
+                p = pipeline_registry[_type.default]
+                pipeline.append((p.name, c.name, kw))
+
+        return pipeline
 
     def _schemas(self):
-        """ Returns a list of schemas, to be used in ``Form`` instantiation.
+        """ Returns a list of schema instances, for ``Form`` instantiation.
         """
 
         schemas = []
@@ -289,36 +311,18 @@ class CreateCorpusView(FormView):
 
         schema = form.schema
         # now add new schemas, at the end of all others
-        add_component = appstruct.get('pipeline_components')
+        add_component = appstruct.pop('pipeline_components', None)
         if add_component:
             p = pipeline_registry[add_component]
             s = p.schema(name=rand(10), title=p.title,)
             schema.add(s)
-            appstruct['pipeline_components'] = ''
-
-        # move pipeline_components to the bottom
-        w = schema.__delitem__('pipeline_components')
-        schema.add(w)
+            # move pipeline_components to the bottom
+            w = schema.__delitem__('pipeline_components')
+            schema.add(w)
 
         # try to build a preview, if possible
         if appstruct.get('column'):
-            pipeline = []
-
-            for c in schema.children:
-                _type = c.get('schema_type')
-
-                if _type:
-                    if c.name in appstruct:
-                        kw = appstruct[c.name].copy()   # assume mapping schema
-                    else:
-                        kw = schema_defaults(c)
-
-                    # remove auxiliary fields that are not expected as args
-                    kw.pop('schema_type', None)
-
-                    p = pipeline_registry[_type.default]
-                    pipeline.append((p.name, c.name, kw))
-
+            pipeline = self.pipeline_from_schema(schema, appstruct)
             pstruct = self.request.create_corpus_pipeline_struct = {
                 'file_name': self.document,
                 'text_column': appstruct['column'],

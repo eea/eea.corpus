@@ -1,7 +1,6 @@
-# from textacy.doc import Doc
 from colander import Schema, SchemaNode, Bool
 from eea.corpus.processing import pipeline_component
-from eea.corpus.utils import to_doc, to_text
+from eea.corpus.utils import set_text
 from textacy.preprocess import preprocess_text
 import logging
 
@@ -97,15 +96,14 @@ class TextacyPreprocess(Schema):
     title="Textacy Preprocessing"
 )
 def process(content, env, **settings):
-    # content = (isinstance(doc, Doc) and doc.text or doc for doc in content)
-    content = (to_text(doc) for doc in content)
     for doc in content:
         try:
-            text = preprocess_text(doc, **settings)
+            text = doc.text
+            text = preprocess_text(text, **settings)
         except Exception:
             logger.exception(
                 "Textacy Processor: got an error in extracting content: %r",
                 doc
             )
             continue
-        yield to_doc(text)
+        yield set_text(doc, text)

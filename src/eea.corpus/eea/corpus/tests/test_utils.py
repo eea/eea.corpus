@@ -1,5 +1,4 @@
-from eea.corpus.utils import to_doc
-from eea.corpus.utils import to_text
+from eea.corpus.utils import set_text
 from textacy.doc import Doc
 from unittest.mock import Mock, patch
 import pytest
@@ -49,48 +48,11 @@ class TestConvertorDecorators:
     """ Tests for stream conversion decorators found in eea.corpus.utils
     """
 
-    def test_str_to_doc(self):
-        res = to_doc('hello world')
+    def test_set_text(self):
+        doc = Doc('hello world', metadata={'1': 2})
+        res = set_text(doc, 'second time with more words')
 
         assert isinstance(res, Doc)
-        assert res.text == 'hello world'
-
-    def test_list_to_doc(self):
-        res = to_doc(['hello', 'world'])
-
-        assert isinstance(res, Doc)
-        assert res.text == 'hello world'
-
-    def test_list_list_to_doc(self):
-        res = to_doc(['hello', 'world'])
-
-        assert isinstance(res, Doc)
-        assert res.text == 'hello world'
-
-    def test_doc_to_doc(self):
-        doc = Doc('hello world')
-        res = to_doc(doc)
-
-        assert isinstance(res, Doc)
-        assert res is doc
-        assert res.text == 'hello world'
-
-    def test_unknown_to_doc(self):
-        with pytest.raises(ValueError):
-            to_doc(1)
-
-    def test_str_to_text(self):
-        res = to_text('hello world')
-        assert res == 'hello world'
-
-    def test_list_to_text(self):
-        res = to_text(['hello', 'world'])
-        assert res == 'hello world'
-
-    def test_doc_to_text(self):
-        res = to_text(Doc('hello world'))
-        assert res == 'hello world'
-
-    def test_unknown_to_text(self):
-        with pytest.raises(ValueError):
-            to_text(1)
+        assert res is not doc
+        assert res.text == 'second time with more words'
+        assert res.metadata == {'1': 2}

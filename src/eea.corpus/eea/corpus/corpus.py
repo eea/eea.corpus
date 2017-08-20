@@ -2,7 +2,6 @@ from eea.corpus.async import queue
 from eea.corpus.processing import build_pipeline
 from eea.corpus.utils import corpus_base_path
 from eea.corpus.utils import metadata
-from eea.corpus.utils import to_text
 from rq.decorators import job
 import json
 import logging
@@ -40,11 +39,7 @@ def build_corpus(pipeline, corpus_id, file_name, text_column, **kw):
     cpath = corpus_base_path(file_name)      # corpus_id
     logger.info('Creating corpus for %s at %s', file_name, cpath)
 
-    content_stream = build_pipeline(file_name, text_column, pipeline,
-                                    preview_mode=False)
-
-    content = (to_text(doc) for doc in content_stream)
-    # TODO: save metadata stream
-    corpus = textacy.Corpus('en', texts=content)
+    docs = build_pipeline(file_name, text_column, pipeline, preview_mode=False)
+    corpus = textacy.Corpus('en', docs=docs)
     corpus.save(cpath, name=corpus_id)
     save_corpus_metadata(corpus, file_name, corpus_id, text_column, **kw)

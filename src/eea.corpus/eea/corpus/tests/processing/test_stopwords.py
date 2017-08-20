@@ -16,8 +16,9 @@ class TestStopWords:
 
     def test_remove_stopwords(self):
         from eea.corpus.processing.stopwords import process
+        from textacy.doc import Doc
 
-        content = process([self.text], {})
+        content = process([Doc(self.text)], {})
         text = next(content)
 
         assert text.n_tokens == 92

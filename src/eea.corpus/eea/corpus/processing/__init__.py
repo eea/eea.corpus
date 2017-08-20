@@ -1,11 +1,11 @@
+from textacy.fileio import split_record_fields, read_csv
 from collections import namedtuple, OrderedDict
 from eea.corpus.processing.utils import component_phash_id
 from eea.corpus.processing.utils import get_pipeline_for_component
-from eea.corpus.utils import to_doc
 from eea.corpus.utils import upload_location
+from textacy.doc import Doc
 import colander
 import deform
-import pandas as pd
 import venusian
 
 
@@ -77,12 +77,6 @@ def pipeline_component(schema, title, actions=None):
                     default=uid,
                     missing=uid,
                 )
-                # schema_position = colander.SchemaNode(
-                #     colander.Int(),
-                #     # widget=deform.widget.HiddenWidget(),
-                #     default=-1,
-                #     missing=-1,
-                # )
 
             p = Processor(uid, WrappedSchema, func, title, actions=[])
             pipeline_registry[uid] = p
@@ -111,8 +105,12 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
 
     """
     document_path = upload_location(file_name)
-    df = pd.read_csv(document_path)
-    content_stream = iter(df[text_column])
+    df = read_csv(document_path)
+    stream = split_record_fields(df, text_column, itemwise=True)
+
+    content_stream = (
+        Doc(text, lang='en', metadata=meta) for text, meta in stream
+    )
 
     env = {
         'file_name': file_name,
@@ -140,8 +138,6 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
         component = pipeline_registry[component_name]
         process = component.process
         content_stream = process(content_stream, env, **kwargs)
-
-    content_stream = (to_doc(doc) for doc in content_stream)
 
     return content_stream
 
