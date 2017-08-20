@@ -51,8 +51,10 @@ def process(content, env, **settings):
         if mode == 'tokenize':
             for nc in ncs:
                 text = text.replace(nc, tokenize(nc))
+
         if mode == 'append':
             text = ' '.join([text] + [tokenize(nc) for nc in ncs])
+
         if mode == 'replace':
             text = ' '.join([tokenize(nc) for nc in ncs])
 
