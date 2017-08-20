@@ -1,8 +1,9 @@
-from textacy.fileio import split_record_fields, read_csv
 from collections import namedtuple, OrderedDict
 from eea.corpus.processing.utils import component_phash_id
 from eea.corpus.processing.utils import get_pipeline_for_component
 from eea.corpus.utils import upload_location
+from itertools import zip_longest
+from pandas import read_csv
 from textacy.doc import Doc
 import colander
 import deform
@@ -106,7 +107,11 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
     """
     document_path = upload_location(file_name)
     df = read_csv(document_path)
-    stream = split_record_fields(df, text_column, itemwise=True)
+
+    cs = iter(df[text_column])
+    df = df[df.columns.difference([text_column])]
+    ms = (dict(zip(df.keys(), row)) for row in df.values)
+    stream = zip_longest(cs, ms)
 
     content_stream = (
         Doc(text, lang='en', metadata=meta) for text, meta in stream
@@ -128,10 +133,11 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
     for (component_name, step_id, kwargs) in pipeline:
         env['step_id'] = step_id
 
-        # TODO: worth it to optimize this?
-        phrase_model_pipeline = get_pipeline_for_component(env)
+        # calculate a hash of current + previous pipeline steps
+        # this pottentially allows processors to use a cache, if needed
+        step_pipeline = get_pipeline_for_component(env)
         phash_id = component_phash_id(
-            file_name, text_column, phrase_model_pipeline
+            file_name, text_column, step_pipeline
         )
         env['phash_id'] = phash_id
 
@@ -142,5 +148,5 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
     return content_stream
 
 
-def includeme(config):
+def includeme(config):      # pragma: no cover
     config.include('.phrases')
