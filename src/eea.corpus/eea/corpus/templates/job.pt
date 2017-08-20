@@ -28,7 +28,7 @@ ${job.exc_info}
         Please reload page to view updated async job status
         </p>
         <p tal:condition="job._status == 'finished'">
-        <a href="/view/${request.matchdict.doc}/${request.matchdict.corpus}">View corpus</a>
+        <a href="/view/${request.matchdict.doc}/${request.matchdict.corpus}/0">View corpus</a>
         </p>
       </div>
       <div tal:condition="not job">

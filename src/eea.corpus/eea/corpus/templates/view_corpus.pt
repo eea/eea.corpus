@@ -1,0 +1,58 @@
+<div metal:use-macro="load: layout.pt">
+
+  <div metal:fill-slot="sidebar-top"></div>
+  <div metal:fill-slot="sidebar"></div>
+
+  <div metal:fill-slot="full-width">
+    <div class="row">
+      <div class="col-md-12">
+        <h1>${corpus}</h1>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <nav aria-label="Page navigation">
+          <ul class="pagination">
+            <li>
+              <a tal:condition="prevp is not None" href="./${prevp}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            <li><a>Document ${page + 1} of ${corpus.n_docs}</a></li>
+            <li>
+              <a tal:condition="nextp" href="./${nextp}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="col-md-7" id="corpus-form">
+        <h4>
+          A document of ${doc.n_sents} sentences and ${doc.n_tokens} tokens
+        </h4>
+        <p>
+          ${doc.text}
+        </p>
+      </div>
+
+      <div class="col-md-5">
+        <div class="content">
+          <h4>Metadata</h4>
+          <ul>
+            <li tal:repeat="key doc.metadata.keys()">
+              <strong>${key}</strong>
+              <p tal:define="val doc.metadata[key]"
+             tal:content="isinstance(val, str) and val.replace(',', ', ') or val">
+              value here
+              </p>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

@@ -31,18 +31,23 @@
           <div class="panel-body" tal:condition="doc.corpuses">
             <ul class="list-group" >
               <li class="list-group-item" tal:repeat="corpus doc.corpuses">
-                <form method="POST" class="pull-right"
-                                    action="/delete/${doc.name}/${corpus[0]}">
-                  <button class="btn btn-secondary" >
-                    <span class="glyphicon glyphicon-trash"></span>
-                  </button>
-                </form>
+                <div class="btn-group pull-right">
+                  <form method="POST" action="/delete/${doc.name}/${corpus[0]}">
+                    <button class="btn btn-secondary" >
+                      <span class="glyphicon glyphicon-trash"></span>
+                    </button>
+                  </form>
+                </div>
                 <div role="group">
-                  <a href="/view/${doc.name}/${corpus[0]}" >
                   <h4>
                     ${corpus[1]['title']}
                   </h4>
-                  </a>
+                  <a href="/topics/${doc.name}/${corpus[0]}" >Topic Modeling</a>
+                  /
+                  <a href="/categorize/${doc.name}/${corpus[0]}">Categorize</a>
+                  /
+                  <a href="/view/${doc.name}/${corpus[0]}/0">View</a>
+
                   <small>${corpus[1].get('created')}</small>
                   <p class="discreet">
                   ${corpus[1]['description']}

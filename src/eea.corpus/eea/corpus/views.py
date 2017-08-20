@@ -78,7 +78,7 @@ class UploadView(FormView):
 
 
 @view_config(
-    route_name="view_corpus",
+    route_name="corpus_topics",
     renderer="templates/topics.pt"
 )
 class TopicsView(FormView):
@@ -249,7 +249,7 @@ class CreateCorpusView(FormView):
                             ),
                             kwargs=appstruct)
 
-        raise exc.HTTPFound('/view/%s/%s/job/%s' %
+        raise exc.HTTPFound('/job-view/%s/%s/job/%s' %
                             (self.document, corpus_id, job.id))
 
     def form_class(self, schema, **kwargs):
@@ -366,4 +366,29 @@ def handle_exc(context, request):
     logger.error(error)
     return {
         'error': error
+    }
+
+
+@view_config(route_name="corpus_view", renderer='templates/view_corpus.pt')
+def view_corpus(request):
+    page = int(request.matchdict['page'])
+    corpus = get_corpus(request)
+
+    if corpus is None or page > (corpus.n_docs - 1):
+        raise exc.HTTPNotFound()
+
+    nextp = page + 1
+    if nextp >= corpus.n_docs:
+        nextp = None
+
+    prevp = page - 1
+    if prevp < 0:
+        prevp = None
+
+    return {
+        'corpus': corpus,
+        'doc': corpus[page],
+        'nextp': nextp,
+        'prevp': prevp,
+        'page': page
     }

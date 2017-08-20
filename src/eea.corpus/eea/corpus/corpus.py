@@ -1,6 +1,7 @@
 from eea.corpus.async import queue
 from eea.corpus.processing import build_pipeline
 from eea.corpus.utils import corpus_base_path
+from eea.corpus.utils import is_safe_to_save
 from eea.corpus.utils import metadata
 from rq.decorators import job
 import json
@@ -40,6 +41,7 @@ def build_corpus(pipeline, corpus_id, file_name, text_column, **kw):
     logger.info('Creating corpus for %s at %s', file_name, cpath)
 
     docs = build_pipeline(file_name, text_column, pipeline, preview_mode=False)
-    corpus = textacy.Corpus('en', docs=docs)
+    docs = (doc for doc in docs if is_safe_to_save(doc))
+    corpus = textacy.Corpus(lang='en', docs=docs)
     corpus.save(cpath, name=corpus_id)
     save_corpus_metadata(corpus, file_name, corpus_id, text_column, **kw)

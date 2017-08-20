@@ -33,6 +33,7 @@ def load_corpus(file_name, corpus_id, **kw):
         # if there are any files, assume the corpus is created
         # TODO: check that the corpus is really saved
         print("Saved corpus exists, loading", cpath, corpus_id)
+        # import pdb; pdb.set_trace()
         return textacy.Corpus.load(cpath, name=corpus_id)
 
     return None
@@ -102,6 +103,9 @@ def get_corpus(request, doc=None, corpus_id=None):
     cache = request.corpus_cache
     if not (doc and corpus_id):
         doc, corpus_id = extract_corpus_id(request)
+
+    corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
+    return corpus
 
     if corpus_id not in cache.get(doc, []):
         corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
@@ -266,3 +270,25 @@ def tokenize(phrase, delimiter='_'):
         res.append(w)
 
     return delimiter.join(res)
+
+
+def is_safe_to_save(doc):
+    """ Is this doc safe to save?
+
+    For some reason there's a bug in saving/loading spacy Docs. Here we test
+    that the doc can be loaded back from its serialized representation.
+
+    For further reference, see:
+
+        * https://github.com/explosion/spaCy/issues/1045
+        * https://github.com/explosion/spaCy/issues/985
+
+    """
+    text = doc.text[:100]
+    bs = doc.spacy_doc.to_bytes()
+    try:
+        doc.spacy_doc.from_bytes(bs)
+        return True
+    except Exception:
+        logger.warning("Will not save %s, it will not be loadable", text)
+        return False
