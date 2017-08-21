@@ -25,7 +25,7 @@ class TestCorpus:
         build_corpus(pipeline, corpus_id, file_name, text_column, **kw)
 
         assert path.join('test_eea.json').exists()
-        assert path.join('test_spacy_docs.bin').exists()
+        assert path.join('test_docs.json').exists()
         assert path.join('test_metadatas.json').exists()
         assert path.join('test_info.json').exists()
 
@@ -38,7 +38,7 @@ class TestCorpus:
             assert meta == {
                 'description': 'something else',
                 'title': 'first corpus',
-                'metadata': {
+                'statistics': {
                     'docs': 1,
                     'tokens': 2,
                     'sentences': 1,
