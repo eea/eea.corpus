@@ -108,7 +108,7 @@ def get_corpus(request, doc=None, corpus_id=None):
         doc, corpus_id = extract_corpus_id(request)
 
     assert doc and corpus_id
-    corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
+    # corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
 
     cache = request.corpus_cache
     if corpus_id not in cache.get(doc, []):
