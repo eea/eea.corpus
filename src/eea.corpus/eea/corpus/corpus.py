@@ -1,8 +1,10 @@
 from eea.corpus.async import queue
 from eea.corpus.processing import build_pipeline
 from eea.corpus.utils import corpus_base_path
+from eea.corpus.utils import extract_corpus_id
 from rq.decorators import job
-from textacy import fileio
+from textacy import fileio, Corpus
+from textacy.doc import Doc
 import json
 import logging
 import os.path
@@ -31,6 +33,9 @@ def save_corpus_metadata(stats, file_name, corpus_id, text_column, **kw):
 
 
 class DocStream:
+    """ A pass-through stream that gathers stats on streamed docs
+    """
+
     def __init__(self, docs):
         self.docs = docs
         self.n_tokens = 0
@@ -64,13 +69,59 @@ def build_corpus(pipeline, corpus_id, file_name, text_column, **kw):
 
     docs = build_pipeline(file_name, text_column, pipeline, preview_mode=False)
 
-    docs = DocStream(docs)
-    docs = ({'text': doc.text, 'metadata': doc.metadata} for doc in docs)
+    sdocs = DocStream(docs)
+    docs = ({'text': doc.text,
+             'metadata': doc.metadata} for doc in sdocs)
 
     fileio.write_json_lines(
-        docs, fname, mode='wb',
-        ensure_ascii=False, separators=(',', ':')
+        docs, fname, mode='wt',
+        ensure_ascii=True, separators=(',', ':')
     )
     save_corpus_metadata(
-        docs.get_statistics(), file_name, corpus_id, text_column, **kw
+        sdocs.get_statistics(), file_name, corpus_id, text_column, **kw
     )
+
+
+def load_corpus(file_name, corpus_id):
+    """ Loads a textacy corpus from disk.
+
+    Requires the document name and the corpus id
+    """
+
+    cpath = corpus_base_path(file_name)
+    fname = os.path.join(cpath, '%s_docs.json' % corpus_id)
+
+    # TODO: we shouldn't hardcode the language
+    corpus = Corpus('en')
+
+    with open(fname, 'rt') as f:
+        for line in f:
+            j = json.loads(line)
+            doc = Doc(j['text'], lang='en', metadata=j['metadata'])
+            corpus.add_doc(doc)
+
+    return corpus
+
+
+def get_corpus(request, doc=None, corpus_id=None):
+    if not (doc and corpus_id):
+        doc, corpus_id = extract_corpus_id(request)
+
+    corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
+    return corpus
+
+    # cache = request.corpus_cache
+    # if corpus_id not in cache.get(doc, []):
+    #     corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
+    #
+    #     if corpus is None:
+    #         return None
+    #
+    #     cache[doc] = {
+    #         corpus_id: corpus
+    #     }
+    #
+    # try:
+    #     return cache[doc][corpus_id]
+    # except:
+    #     import pdb; pdb.set_trace()

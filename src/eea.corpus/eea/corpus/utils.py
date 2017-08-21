@@ -7,7 +7,6 @@ import logging
 import os
 import random
 import string
-import textacy
 
 
 logger = logging.getLogger('eea.corpus')
@@ -18,25 +17,6 @@ CORPUS_STORAGE = "/corpus"
 
 def rand(n):
     return ''.join(random.sample(string.ascii_uppercase + string.digits, k=n))
-
-
-def load_corpus(file_name, corpus_id, **kw):
-    """ Loads a textacy corpus from disk.
-
-    Requires the document name and the corpus id
-    """
-
-    cpath = corpus_base_path(file_name)
-
-    if os.listdir(cpath):
-        assert os.path.exists(corpus_metadata_path(file_name, corpus_id))
-        # if there are any files, assume the corpus is created
-        # TODO: check that the corpus is really saved
-        print("Saved corpus exists, loading", cpath, corpus_id)
-        # import pdb; pdb.set_trace()
-        return textacy.Corpus.load(cpath, name=corpus_id)
-
-    return None
 
 
 def corpus_base_path(file_name):
@@ -97,30 +77,6 @@ def available_corpus(file_name):
             res.append(corpus)
 
     return res
-
-
-def get_corpus(request, doc=None, corpus_id=None):
-    if not (doc and corpus_id):
-        doc, corpus_id = extract_corpus_id(request)
-
-    corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
-    return corpus
-
-    # cache = request.corpus_cache
-    # if corpus_id not in cache.get(doc, []):
-    #     corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
-    #
-    #     if corpus is None:
-    #         return None
-    #
-    #     cache[doc] = {
-    #         corpus_id: corpus
-    #     }
-    #
-    # try:
-    #     return cache[doc][corpus_id]
-    # except:
-    #     import pdb; pdb.set_trace()
 
 
 def corpus_metadata_path(file_name, corpus_id):

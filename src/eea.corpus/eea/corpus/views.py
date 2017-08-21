@@ -6,6 +6,7 @@ from deform import Form
 from deform import ZPTRendererFactory
 from eea.corpus.async import queue
 from eea.corpus.corpus import build_corpus
+from eea.corpus.corpus import get_corpus
 from eea.corpus.processing import build_pipeline
 from eea.corpus.processing import pipeline_registry
 from eea.corpus.schema import CreateCorpusSchema
@@ -18,9 +19,7 @@ from eea.corpus.utils import available_documents
 from eea.corpus.utils import delete_corpus
 from eea.corpus.utils import document_name
 from eea.corpus.utils import extract_corpus_id
-from eea.corpus.utils import get_corpus
 from eea.corpus.utils import hashed_id
-from eea.corpus.utils import metadata
 from eea.corpus.utils import rand
 from eea.corpus.utils import schema_defaults
 from eea.corpus.utils import upload_location
@@ -104,7 +103,13 @@ class TopicsView(FormView):
         """ Show metadata about context document
         """
         # TODO: show info about processing and column
-        return metadata(self.corpus())
+        corpus = self.corpus()
+        return {
+            'docs': corpus.n_docs,
+            'sentences': corpus.n_sents,
+            'tokens': corpus.n_tokens,
+            'lang': corpus.lang,
+        }
 
     def visualise(self, appstruct, method):
         max_df = appstruct['max_df']
