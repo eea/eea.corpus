@@ -109,20 +109,16 @@ def get_corpus(request, doc=None, corpus_id=None):
 
     assert doc and corpus_id
     corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
-    return corpus
 
-    # cache = request.corpus_cache
-    # if corpus_id not in cache.get(doc, []):
-    #     corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
-    #
-    #     if corpus is None:
-    #         return None
-    #
-    #     cache[doc] = {
-    #         corpus_id: corpus
-    #     }
-    #
-    # try:
-    #     return cache[doc][corpus_id]
-    # except:
-    #     import pdb; pdb.set_trace()
+    cache = request.corpus_cache
+    if corpus_id not in cache.get(doc, []):
+        corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
+
+        if corpus is None:
+            return None
+
+        cache[doc] = {
+            corpus_id: corpus
+        }
+
+    return cache[doc][corpus_id]
