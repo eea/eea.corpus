@@ -15,7 +15,7 @@ logger = logging.getLogger('eea.corpus')
 
 def save_corpus_metadata(stats, file_name, corpus_id, text_column, **kw):
     cpath = corpus_base_path(file_name)      # corpus_id
-    meta_name = "{0}_eea.json".format(corpus_id)
+    meta_name = "{0}_info.json".format(corpus_id)
     meta_path = os.path.join(cpath, meta_name)
 
     title = kw.pop('title')
@@ -107,6 +107,7 @@ def get_corpus(request, doc=None, corpus_id=None):
     if not (doc and corpus_id):
         doc, corpus_id = extract_corpus_id(request)
 
+    assert doc and corpus_id
     corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
     return corpus
 

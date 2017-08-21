@@ -70,7 +70,7 @@ def available_corpus(file_name):
         files[base].append(spec)
 
         for corpus, cfs in files.items():
-            if len(cfs) != 4:
+            if len(cfs) != len(('docs', 'info')):
                 logger.warning("Not a valid corpus: %s (%s)",
                                file_name, corpus)
                 continue
@@ -79,11 +79,11 @@ def available_corpus(file_name):
     return res
 
 
-def corpus_metadata_path(file_name, corpus_id):
-    """ Returns the <corpusid>_eea.json file path for a given doc/corpus
+def corpus_info_path(file_name, corpus_id):
+    """ Returns the <corpusid>_info.json file path for a given doc/corpus
     """
     cpath = corpus_base_path(file_name)      # corpus_id
-    meta_name = "{0}_eea.json".format(corpus_id)
+    meta_name = "{0}_info.json".format(corpus_id)
     meta_path = os.path.join(cpath, meta_name)
     return meta_path
 
@@ -91,7 +91,7 @@ def corpus_metadata_path(file_name, corpus_id):
 def load_corpus_metadata(file_name, corpus_id):
     """ Returns the EEA specific metadata saved for a doc/corpus
     """
-    meta_path = corpus_metadata_path(file_name, corpus_id)
+    meta_path = corpus_info_path(file_name, corpus_id)
 
     res = None
 
@@ -120,9 +120,8 @@ def available_documents(request):
                 files[base].append(spec)
 
             for corpus, cfs in files.items():
-                if len(cfs) != 4:
-                    # logger.warning("Not a valid corpus: %s (%s)", name,
-                    # corpus)
+                if len(cfs) != len(('docs', 'info')):
+                    logger.warning("Not a valid corpus: %s (%s)", name, corpus)
                     continue
                 meta = load_corpus_metadata(name, corpus)
                 corpuses.append((corpus, meta))

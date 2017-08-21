@@ -27,7 +27,7 @@ class TestCorpus:
 
         build_corpus(pipeline, corpus_id, file_name, text_column, **kw)
 
-        assert path.join('test_eea.json').exists()
+        assert path.join('test_info.json').exists()
         assert path.join('test_docs.json').exists()
 
         docs = []
@@ -39,7 +39,7 @@ class TestCorpus:
         assert docs[1] == {'text': 'Second time', 'metadata': {'3': 4}}
         assert len(docs) == 2
 
-        with path.join('test_eea.json').open() as f:
+        with path.join('test_info.json').open() as f:
             meta = json.load(f)
             assert meta == {
                 'description': 'something else',
