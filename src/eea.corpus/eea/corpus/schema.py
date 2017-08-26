@@ -130,3 +130,15 @@ class CreateCorpusSchema(colander.MappingSchema):
         widget=pipeline_components_widget,
         title="Add a new pipeline component"
     )
+
+
+class ClassifficationModelSchema(colander.MappingSchema):
+    """ Schema to build a text classification modle
+    """
+
+    column = SchemaNode(
+        String(),
+        widget=columns_widget,
+        validator=colander.Length(min=1),
+        title='Column with class labels',
+    )

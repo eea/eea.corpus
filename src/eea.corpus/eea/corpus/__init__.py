@@ -36,6 +36,7 @@ def main(global_config, **settings):
     config.add_route('corpus_topics', '/topics/{doc}/{corpus}')
     config.add_route('delete_corpus', '/delete/{doc}/{corpus}')
     config.add_route('process_csv', '/process/{doc}/')
+    config.add_route('corpus_classify', '/classify/{doc}/{corpus}')
     config.add_route('view_job', '/job-view/{doc}/{corpus}/job/{job}')
     config.add_route('demo', '/demo')
 

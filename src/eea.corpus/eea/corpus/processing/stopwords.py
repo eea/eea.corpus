@@ -10,9 +10,12 @@ import nltk
 
 logger = logging.getLogger('eea.corpus')
 
-dl = nltk.downloader.Downloader()
-if not dl.is_installed('stopwords'):
-    nltk.download('stopwords')      # TODO: do this some other way
+try:
+    dl = nltk.downloader.Downloader()
+    if not dl.is_installed('stopwords'):
+        nltk.download('stopwords')      # TODO: do this some other way
+except Exception:
+    logger.exception("Error when checking for nltk's stopwords data")
 
 
 class StopWords(Schema):

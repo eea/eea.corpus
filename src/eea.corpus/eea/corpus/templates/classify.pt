@@ -1,0 +1,37 @@
+<div metal:use-macro="load: layout.pt">
+
+  <div metal:fill-slot="sidebar-top"></div>
+  <div metal:fill-slot="sidebar"></div>
+
+  <div metal:fill-slot="full-width">
+    <div class="row">
+      <div class="col-md-12">
+        <h1>Create a new classification model</h1>
+        <p>Set required parameters for the classification model</p>
+      </div>
+    </div>
+
+    <div class="row">
+
+      <div class="col-md-5" id="corpus-form">
+        <form tal:replace="structure form" ></form>
+      </div>
+
+      <div class="col-md-7">
+        <div class="content">
+          <h4>Preview result</h4>
+          <p>Choose row and processing settings to preview results</p>
+
+          <div class="panel panel-default">
+            <div class="panel-body">
+              Score: ${view.score}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
