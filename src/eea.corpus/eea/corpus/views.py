@@ -457,7 +457,7 @@ class ClassVocab:
 @view_config(route_name="corpus_classify", renderer='templates/classify.pt')
 class CreateClassificationModelView(FormView):
     schema = ClassifficationModelSchema()
-    buttons = ('classify',)
+    buttons = ('classify', 'fasttext')
 
     score = None
 
@@ -514,7 +514,7 @@ class CreateClassificationModelView(FormView):
         from sklearn.feature_extraction.text import TfidfTransformer
         transf = TfidfTransformer()
         X = transf.fit_transform(X)
-        X = X.toarray()
+        # X = X.toarray()   # only needed for GDC
 
         # from sklearn.feature_extraction.text import TfidfVectorizer
         # vect = TfidfVectorizer(max_features=5000,
@@ -534,7 +534,7 @@ class CreateClassificationModelView(FormView):
         # from sklearn.ensemble import GradientBoostingClassifier   # acc: 0.65
         # model = GradientBoostingClassifier(n_estimators=10,learning_rate=0.1)
 
-        # 0.763 with tfidf from countvect 5000
+        # 0.763 with tfidf from countvect 5000, 0.7 without tfidf
         from sklearn.linear_model import LogisticRegression
         model = LogisticRegression()
 
@@ -556,3 +556,63 @@ class CreateClassificationModelView(FormView):
         self.score = metrics.accuracy_score(y_test, pred)
         print(self.score)
 
+    def fasttext_success(self, appstruct):
+        from itertools import islice
+        # from pyfasttext import FastText
+
+        corpus = self.corpus()
+        docs = [doc for doc in corpus
+                if not isinstance(doc.metadata['Category Path'], float)]
+
+        split = int(corpus.n_docs * 0.9)        # TODO: should be docs
+
+        train_docs = islice(docs, 0, split)
+        test_docs = islice(docs, split, corpus.n_docs)
+
+        print('Writing corpus to disk')
+        lines = []
+        for doc in train_docs:
+            labels = doc.metadata['Category Path'].replace('/', ' __label__')
+            labels = labels.strip()
+            # labels = '__label__' + doc.metadata['Category Path'].split('/')[1]
+            text = doc.text.replace('\n', ' ')
+            line = " ".join([labels, text])
+            lines.append(line)
+
+        import unicodedata
+        with open('/tmp/corpus-train.txt', 'wb') as f:
+            s = '\n'.join(lines)
+            s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore')
+            f.write(s)
+
+        y_test = []
+        test_lines = []
+        with open('/tmp/corpus-test.txt', 'w') as f:
+            for doc in test_docs:
+                labels = [x for x in doc.metadata['Category Path'].split('/')
+                          if x]
+                # labels = '__label__' + \
+                #     doc.metadata['Category Path'].split('/')[1]
+                test_lines.append(doc.text.replace('\n', ' '))
+                y_test.append(labels)
+            f.write('\n'.join(test_lines))
+
+        print("Training model")
+        # model = fasttext.supervised()
+        import fasttext as ft
+        model = ft.supervised(input_file='/tmp/corpus-train.txt',
+                              output='/tmp/ftmodel', epoch=100)
+        print("Model trained")
+
+        # from sklearn import metrics
+        # self.score = metrics.accuracy_score(y_test, pred)
+
+        pred = model.predict(test_lines, k=2)
+        zz = list(zip(pred, y_test))
+        tt = [x for x in zz if set(x[0]) != set(x[1])]
+        notok = len(tt)
+        self.score = notok * 100 / len(zz)
+        print("Score %s" % self.score)
+
+        xx = model.predict_proba(test_lines, k=2)
+        import pdb; pdb.set_trace()
