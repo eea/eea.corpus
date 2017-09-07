@@ -62,7 +62,7 @@ def get_job_finish_status(phash_id, timeout=100):
         if st == JS.STARTED:        # for started jobs, we wait indefinitely
             cycle = 0
 
-        time.sleep(timeout)     # sleep 10 seconds
+        time.sleep(10)     # sleep 10 seconds
         cycle += 10
 
         if cycle >= timeout:

@@ -115,6 +115,8 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
 
     content_stream = (
         Doc(text, lang='en', metadata=meta) for text, meta in stream
+        # strip rows where there's no text
+        if text and isinstance(text, str)
     )
 
     env = {
