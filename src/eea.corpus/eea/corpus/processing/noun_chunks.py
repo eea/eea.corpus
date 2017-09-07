@@ -54,12 +54,12 @@ def process(content, env, **settings):
     mode = settings.get('mode', 'tokenize')
 
     drop_deter = settings['drop_determiners']
-    min_freq = settings['min_freq']
+    min_freq = int(settings['min_freq'])
 
     for doc in content:
         try:
             ncs = [x.text for x in noun_chunks(doc,
-                                               drop_determiners=drop_det,
+                                               drop_determiners=drop_deter,
                                                min_freq=min_freq)]
         except Exception:
             logger.exception("Error extracting noun chunks %r", doc)
