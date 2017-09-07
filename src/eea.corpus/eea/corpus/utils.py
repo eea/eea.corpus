@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from collections import defaultdict
+from cytoolz import compose
 from textacy.doc import Doc
 import hashlib
 import json
@@ -241,3 +242,43 @@ def tokenize(phrase, delimiter='_'):
 #     except Exception:
 #         logger.warning("Will not save %s, it will not be loadable", text)
 #         return False
+
+
+def handle_slash(words):
+    for word in words:
+        for bit in word.split('/'):
+            yield bit
+
+
+def handle_numbers(words):
+    for word in words:
+        if word.isnumeric():
+            yield "*number*"
+        yield word
+
+
+def lower_words(words):
+    yield from (w.lower() for w in words)
+
+
+def filter_small_words(words):
+    for w in words:
+        if len(w) > 2:
+            yield w
+
+
+handle_text = compose(filter_small_words, lower_words, handle_numbers,
+                      handle_slash, )
+
+
+def tokenizer(text):
+    """ Tokenizes text. Returns lists of tokens (words)
+    """
+    ignore_chars = "()*:\"><][#\n\t'^%?=&"
+    for c in ignore_chars:
+        text = text.replace(c, ' ')
+    words = text.split(' ')
+
+    text = list(handle_text(words))
+
+    return text

@@ -1,4 +1,4 @@
-from colander import Int, Schema, SchemaNode, String, Float     # , Bool
+from colander import Int, Schema, SchemaNode, String, Float, Set
 from eea.corpus.processing import pipeline_registry
 from eea.corpus.utils import upload_location
 import colander
@@ -14,24 +14,41 @@ class Store(dict):
 tmpstore = Store()
 
 
+def csv_file_columns(request):
+    md = request.matchdict or {}
+    name = md.get('doc')
+    if name:
+        path = upload_location(name)        # TODO: move this to utils
+        f = pd.read_csv(path)
+
+    return [(k, k) for k in f.keys()]
+
+
 @colander.deferred
 def columns_widget(node, kw):
     """ A select widget that reads the csv file to show available columns
     """
 
-    choices = []
     req = kw['request']
-
-    md = req.matchdict or {}
-    name = md.get('doc')
-    if name:
-        path = upload_location(name)        # TODO: move this to utils
-        f = pd.read_csv(path)
-        choices = [('', '')] + [(k, k) for k in f.keys()]
+    choices = [('', '')] + csv_file_columns(req)
 
     return deform.widget.SelectWidget(
         values=choices,
         default=''
+    )
+
+
+@colander.deferred
+def multi_columns_widget(node, kw):
+    """ A multiselect widget that reads the csv file to show available columns
+    """
+
+    req = kw['request']
+    choices = csv_file_columns(req)
+
+    return deform.widget.SelectWidget(
+        values=choices,
+        multiple=True
     )
 
 
@@ -136,9 +153,8 @@ class ClassifficationModelSchema(colander.MappingSchema):
     """ Schema to build a text classification modle
     """
 
-    column = SchemaNode(
-        String(),
-        widget=columns_widget,
-        validator=colander.Length(min=1),
-        title='Column with class labels',
+    columns = SchemaNode(
+        Set(),
+        widget=multi_columns_widget,
+        title='Columns with class labels',
     )
