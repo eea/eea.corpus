@@ -1,6 +1,6 @@
-from colander import Schema
 from eea.corpus.processing import pipeline_component
 from eea.corpus.utils import tokenize, set_text
+from textacy.extract import noun_chunks
 import colander
 import deform.widget
 import logging
@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger('eea.corpus')
 
 
-class NounChunks(Schema):
+class NounChunks(colander.Schema):
     """ Schema for the NounChunks processing.
     """
 
@@ -29,6 +29,21 @@ class NounChunks(Schema):
         widget=deform.widget.RadioChoiceWidget(values=MODES)
     )
 
+    drop_determiners = colander.SchemaNode(
+        colander.Bool(),
+        default=True,
+        missing=False,
+        label="Determiners are leading word particles (ex: the)",
+        title='Drop determiners',
+    )
+
+    min_freq = colander.SchemaNode(
+        colander.Int(),
+        title="Minimum frequency count",
+        description="""Ignore phrases with lower count then given number""",
+        default=1,
+    )
+
 
 @pipeline_component(schema=NounChunks,
                     title="Find and process noun chunks")
@@ -38,9 +53,14 @@ def process(content, env, **settings):
 
     mode = settings.get('mode', 'tokenize')
 
+    drop_deter = settings['drop_determiners']
+    min_freq = settings['min_freq']
+
     for doc in content:
         try:
-            ncs = [x.text for x in doc.spacy_doc.noun_chunks]
+            ncs = [x.text for x in noun_chunks(doc,
+                                               drop_determiners=drop_det,
+                                               min_freq=min_freq)]
         except Exception:
             logger.exception("Error extracting noun chunks %r", doc)
             continue

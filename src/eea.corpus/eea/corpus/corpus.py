@@ -96,7 +96,11 @@ def load_corpus(file_name, corpus_id):
 
     with open(fname, 'rt') as f:
         for line in f:
-            j = json.loads(line)
+            try:
+                j = json.loads(line)
+            except:
+                logger.warning("Could not load corpus line: %r", line)
+                continue
             doc = Doc(j['text'], lang='en', metadata=j['metadata'])
             corpus.add_doc(doc)
 
