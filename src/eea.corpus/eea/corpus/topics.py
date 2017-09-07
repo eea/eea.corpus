@@ -15,10 +15,11 @@ class Vectorizer(textacy.vsm.Vectorizer):
 
 def build_model(corpus, topics, num_docs=None, weighting='tf', min_df=0.1,
                 max_df=0.7):
-    docs = (
-        doc.to_terms_list(ngrams=1, named_entities=False, as_strings=True)
+    import pdb; pdb.set_trace()
+    docs = [
+        list(doc.to_terms_list(ngrams=1, named_entities=False, as_strings=True))
         for doc in corpus[:num_docs]
-    )
+    ]
 
     vectorizer = Vectorizer(
         weighting=weighting,      # TODO: is this weighting correct?
@@ -37,8 +38,9 @@ def build_model(corpus, topics, num_docs=None, weighting='tf', min_df=0.1,
 def pyldavis_visualization(corpus, topics, num_docs=None, weighting='tf',
                            min_df=0.1, max_df=0.7, mds='pcoa', *args,
                            **kwargs):
-    model, doc_term_matrix, vectorizer = build_model(corpus, topics, num_docs,
-                                                     min_df, max_df)
+    model, doc_term_matrix, vectorizer = build_model(
+        corpus, topics, num_docs, weighting, min_df, max_df
+    )
     prep_data = prepare(model.model, doc_term_matrix, vectorizer, mds=mds)
     out = StringIO()
     save_html(prep_data, out)
@@ -48,8 +50,9 @@ def pyldavis_visualization(corpus, topics, num_docs=None, weighting='tf',
 
 def termite_visualization(corpus, topics, num_docs=None, min_df=0.1,
                           weighting='tf', max_df=0.7, *args, **kwargs):
-    model, doc_term_matrix, vectorizer = build_model(corpus, topics, num_docs,
-                                                     min_df, max_df)
+    model, doc_term_matrix, vectorizer = build_model(
+        corpus, topics, num_docs, weighting, min_df, max_df
+    )
     out = StringIO()
     id2term = vectorizer.id_to_term
     model.termite_plot(doc_term_matrix, id2term, save=out)
@@ -63,8 +66,9 @@ def wordcloud_visualization(corpus, topics, num_docs=None, min_df=0.1,
     font = pkg_resources.resource_filename(__name__,
                                            "fonts/ZillaSlab-Medium.ttf")
     print (font)
-    model, doc_term_matrix, vectorizer = build_model(corpus, topics, num_docs,
-                                                     min_df, max_df)
+    model, doc_term_matrix, vectorizer = build_model(
+        corpus, topics, num_docs, weighting, min_df, max_df
+    )
     prep_data = prepare(model.model, doc_term_matrix, vectorizer, mds=mds)
     ti = prep_data.topic_info
     topic_labels = ti.groupby(['Category']).groups.keys()
