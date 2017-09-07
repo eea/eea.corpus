@@ -117,6 +117,7 @@ class TopicsView(FormView):
         mds = appstruct['mds']
         num_docs = appstruct['num_docs']
         topics = appstruct['topics']
+        weighting = appstruct['weighting']
 
         corpus = self.corpus()
         MAP = {
@@ -126,7 +127,8 @@ class TopicsView(FormView):
         }
 
         visualizer = MAP[method]
-        vis = visualizer(corpus, topics, num_docs, min_df, max_df, mds)
+        vis = visualizer(corpus, topics, num_docs, weighting, min_df, max_df,
+                         mds)
         return vis
 
     def view_success(self, appstruct):

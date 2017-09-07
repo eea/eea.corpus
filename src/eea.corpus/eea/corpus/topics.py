@@ -13,14 +13,15 @@ class Vectorizer(textacy.vsm.Vectorizer):
         return self.feature_names
 
 
-def build_model(corpus, topics, num_docs=None, min_df=0.1, max_df=0.7):
+def build_model(corpus, topics, num_docs=None, weighting='tf', min_df=0.1,
+                max_df=0.7):
     docs = (
         doc.to_terms_list(ngrams=1, named_entities=False, as_strings=True)
         for doc in corpus[:num_docs]
     )
 
     vectorizer = Vectorizer(
-        weighting='tfidf',      # TODO: is this weighting correct?
+        weighting=weighting,      # TODO: is this weighting correct?
         normalize=False, smooth_idf=False, min_df=min_df, max_df=max_df,
         max_n_terms=100000
     )
@@ -33,8 +34,9 @@ def build_model(corpus, topics, num_docs=None, min_df=0.1, max_df=0.7):
     return model, doc_term_matrix, vectorizer
 
 
-def pyldavis_visualization(corpus, topics, num_docs=None, min_df=0.1,
-                           max_df=0.7, mds='pcoa', *args, **kwargs):
+def pyldavis_visualization(corpus, topics, num_docs=None, weighting='tf',
+                           min_df=0.1, max_df=0.7, mds='pcoa', *args,
+                           **kwargs):
     model, doc_term_matrix, vectorizer = build_model(corpus, topics, num_docs,
                                                      min_df, max_df)
     prep_data = prepare(model.model, doc_term_matrix, vectorizer, mds=mds)
@@ -45,7 +47,7 @@ def pyldavis_visualization(corpus, topics, num_docs=None, min_df=0.1,
 
 
 def termite_visualization(corpus, topics, num_docs=None, min_df=0.1,
-                          max_df=0.7, *args, **kwargs):
+                          weighting='tf', max_df=0.7, *args, **kwargs):
     model, doc_term_matrix, vectorizer = build_model(corpus, topics, num_docs,
                                                      min_df, max_df)
     out = StringIO()
@@ -56,7 +58,8 @@ def termite_visualization(corpus, topics, num_docs=None, min_df=0.1,
 
 
 def wordcloud_visualization(corpus, topics, num_docs=None, min_df=0.1,
-                            max_df=0.7, mds='pcoa', *args, **kwargs):
+                            weighting='tf', max_df=0.7, mds='pcoa', *args,
+                            **kwargs):
     font = pkg_resources.resource_filename(__name__,
                                            "fonts/ZillaSlab-Medium.ttf")
     print (font)

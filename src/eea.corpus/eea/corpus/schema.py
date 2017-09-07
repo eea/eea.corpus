@@ -54,6 +54,18 @@ class TopicExtractionSchema(Schema):
         default=100,
         title="Max number of documents to process"
     )
+    weighting = SchemaNode(
+        String(),
+        title="Term weighting normalization",
+        description="Change the weight of terms based on frequency",
+        widget=deform.widget.SelectWidget(
+            values=[
+                ('tf', 'TF'),
+                ('tfidf', 'TFIDF'),
+            ],
+            default='tf'
+        )
+    )
     min_df = SchemaNode(
         Float(),
         title="min_df",
