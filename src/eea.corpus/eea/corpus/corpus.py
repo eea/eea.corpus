@@ -105,7 +105,7 @@ def load_corpus(file_name, corpus_id):
                 logger.warning("Could not load corpus line: %r", line)
                 continue
             texts.append(j['text'])
-            metas.append(metadata=j['metadata'])
+            metas.append(j['metadata'])
 
     corpus.add_texts(texts, metadatas=metas)
     return corpus
