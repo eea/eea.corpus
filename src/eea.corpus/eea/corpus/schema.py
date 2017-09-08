@@ -54,6 +54,11 @@ class TopicExtractionSchema(Schema):
         default=100,
         title="Max number of documents to process"
     )
+    ngrams = SchemaNode(
+        Int(),
+        default=1,
+        title="ngram level generation for tokens"
+    )
     weighting = SchemaNode(
         String(),
         title="Term weighting normalization",

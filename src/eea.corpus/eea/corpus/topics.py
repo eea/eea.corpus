@@ -13,11 +13,15 @@ class Vectorizer(textacy.vsm.Vectorizer):
         return self.feature_names
 
 
-def build_model(corpus, topics, num_docs=None, weighting='tf', min_df=0.1,
-                max_df=0.7):
-    import pdb; pdb.set_trace()
+def build_model(corpus, topics, num_docs=None, ngrams=1, weighting='tf',
+                min_df=0.1, max_df=0.7):
+    ngrams = int(ngrams)
     docs = [
-        list(doc.to_terms_list(ngrams=1, named_entities=False, as_strings=True))
+        list(
+            doc.to_terms_list(ngrams=ngrams,
+                              named_entities=True,
+                              as_strings=True)
+        )
         for doc in corpus[:num_docs]
     ]
 
@@ -35,39 +39,39 @@ def build_model(corpus, topics, num_docs=None, weighting='tf', min_df=0.1,
     return model, doc_term_matrix, vectorizer
 
 
-def pyldavis_visualization(corpus, topics, num_docs=None, weighting='tf',
-                           min_df=0.1, max_df=0.7, mds='pcoa', *args,
-                           **kwargs):
+def pyldavis_visualization(corpus, topics, num_docs=None, ngrams=1,
+                           weighting='tf', min_df=0.1, max_df=0.7, mds='pcoa',
+                           *args, **kwargs):
     model, doc_term_matrix, vectorizer = build_model(
-        corpus, topics, num_docs, weighting, min_df, max_df
+        corpus, topics, num_docs, ngrams, weighting, min_df, max_df
     )
     prep_data = prepare(model.model, doc_term_matrix, vectorizer, mds=mds)
     out = StringIO()
     save_html(prep_data, out)
     out.seek(0)
-    return out.read()
+    return (doc_term_matrix, out.read())
 
 
-def termite_visualization(corpus, topics, num_docs=None, min_df=0.1,
+def termite_visualization(corpus, topics, num_docs=None, min_df=0.1, ngrams=1,
                           weighting='tf', max_df=0.7, *args, **kwargs):
     model, doc_term_matrix, vectorizer = build_model(
-        corpus, topics, num_docs, weighting, min_df, max_df
+        corpus, topics, ngrams, num_docs, weighting, min_df, max_df
     )
     out = StringIO()
     id2term = vectorizer.id_to_term
     model.termite_plot(doc_term_matrix, id2term, save=out)
     out.seek(0)
-    return out.read()
+    return (doc_term_matrix, out.read())
 
 
 def wordcloud_visualization(corpus, topics, num_docs=None, min_df=0.1,
-                            weighting='tf', max_df=0.7, mds='pcoa', *args,
-                            **kwargs):
+                            ngrams=1, weighting='tf', max_df=0.7, mds='pcoa',
+                            *args, **kwargs):
     font = pkg_resources.resource_filename(__name__,
                                            "fonts/ZillaSlab-Medium.ttf")
-    print (font)
+    print(font)
     model, doc_term_matrix, vectorizer = build_model(
-        corpus, topics, num_docs, weighting, min_df, max_df
+        corpus, topics, num_docs, ngrams, weighting, min_df, max_df
     )
     prep_data = prepare(model.model, doc_term_matrix, vectorizer, mds=mds)
     ti = prep_data.topic_info

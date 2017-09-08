@@ -85,13 +85,12 @@ class TopicsView(FormView):
     buttons = ('view', 'termite', 'wordcloud')
 
     vis = None
+    dtm = None
 
     def corpus(self):
         """ Return a corpus based on environment.
 
         It will try to return it from cache, otherwise load it from disk.
-        If corpus hasn't been extracted from the document, it will redirect to
-        a corpus creation tool.
         """
 
         corpus = get_corpus(self.request)
@@ -116,6 +115,7 @@ class TopicsView(FormView):
         min_df = appstruct['min_df']
         mds = appstruct['mds']
         num_docs = appstruct['num_docs']
+        ngrams = appstruct['ngrams']
         topics = appstruct['topics']
         weighting = appstruct['weighting']
 
@@ -127,15 +127,16 @@ class TopicsView(FormView):
         }
 
         visualizer = MAP[method]
-        vis = visualizer(corpus, topics, num_docs, weighting, min_df, max_df,
-                         mds)
+        vis = visualizer(corpus, topics, num_docs, ngrams, weighting, min_df,
+                         max_df, mds)
         return vis
 
     def view_success(self, appstruct):
-        self.vis = self.visualise(appstruct, method='pyLDAvis')
+        self.dtm, self.vis = self.visualise(appstruct, method='pyLDAvis')
+        self.dtm = self.dtm.shape
 
     def termite_success(self, appstruct):
-        self.vis = self.visualise(appstruct, method='termite')
+        self.dtm, self.vis = self.visualise(appstruct, method='termite')
 
     def wordcloud_success(self, appstruct):
         topics = self.visualise(appstruct, method='wordcloud')

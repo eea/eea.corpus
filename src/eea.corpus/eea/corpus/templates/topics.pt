@@ -5,7 +5,8 @@
   </div>
 
   <div metal:fill-slot="content">
-    <div class="content" tal:define="m view.metadata(); vis view.vis">
+    <div class="content"
+         tal:define="m view.metadata(); vis view.vis; dtm view.dtm">
       <!-- <div class="pull&#45;right"> -->
       <!--   <form method="GET" action="/process/${request.matchdict.get('name')}/"> -->
       <!--     <button class="btn btn&#45;tertiary"> -->
@@ -18,6 +19,7 @@
         <p>
         A corpus of ${m.docs} documents, ${m.sentences} sentences and
         ${m.tokens} tokens in language '${m.lang}'.
+        <span tal:condition="dtm">${dtm[1]} terms processed.</span>
         </p>
       </div>
       <div tal:condition="vis" tal:replace="structure vis"></div>

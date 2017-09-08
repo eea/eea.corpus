@@ -94,6 +94,9 @@ def load_corpus(file_name, corpus_id):
     # TODO: we shouldn't hardcode the language
     corpus = Corpus('en')
 
+    texts = []
+    metas = []
+
     with open(fname, 'rt') as f:
         for line in f:
             try:
@@ -101,9 +104,10 @@ def load_corpus(file_name, corpus_id):
             except:
                 logger.warning("Could not load corpus line: %r", line)
                 continue
-            doc = Doc(j['text'], lang='en', metadata=j['metadata'])
-            corpus.add_doc(doc)
+            texts.append(j['text'])
+            metas.append(metadata=j['metadata'])
 
+    corpus.add_texts(texts, metadatas=metas)
     return corpus
 
 

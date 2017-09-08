@@ -10,7 +10,7 @@ def build_phrase_models(content, base_path, settings):
     """ Build and save the phrase models
     """
 
-    ngram_level = settings['level']
+    ngram_level = int(settings['level'])
 
     # According to tee() docs, this may be inefficient in terms of memory.
     # We need to do this because we need multiple passes through the

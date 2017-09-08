@@ -22,7 +22,7 @@
                   <a href="/process/${doc.name}/"
                     class="btn btn-primary btn-sm pull-right">
                     <span class="glyphicon glyphicon-cog"></span>
-                    Create a new corpus
+                    Transform and process corpus
                   </a>
                 </div>
               </div>
