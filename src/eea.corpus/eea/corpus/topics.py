@@ -18,9 +18,10 @@ def build_model(corpus, topics, num_docs=None, ngrams=1, weighting='tf',
     ngrams = int(ngrams)
     docs = [
         list(
-            doc.to_terms_list(ngrams=ngrams,
-                              named_entities=True,
-                              as_strings=True)
+            doc.to_terms_list(
+                ngrams=ngrams, named_entities=True, as_strings=True,
+                filter_nums=True,
+            )
         )
         for doc in corpus[:num_docs]
     ]
