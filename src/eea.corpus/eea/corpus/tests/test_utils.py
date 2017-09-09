@@ -42,24 +42,6 @@ class TestMiscUtils:
         req.matchdict = {'doc': 'first'}
         is_valid_document.return_value = True
         assert document_name(req) == 'first'
-    #
-    # def test_is_safe_to_save(self):
-    #     from eea.corpus.utils import is_safe_to_save
-    #     from pandas import read_csv
-    #     from pkg_resources import resource_filename
-    #     from textacy.doc import Doc
-    #
-    #     fpath = resource_filename('eea.corpus', 'tests/fixtures/broken.csv')
-    #     text_col = read_csv(fpath)['text']
-    #
-    #     assert is_safe_to_save(Doc(text_col[0], lang='en')) is True
-    #     assert is_safe_to_save(Doc(text_col[1], lang='en')) is True
-    #     assert is_safe_to_save(Doc(text_col[0], lang='en')) is True
-    #     assert is_safe_to_save(Doc(text_col[1], lang='en')) is True
-    #     assert is_safe_to_save(Doc(text_col[0], lang='en')) is True
-    #     assert is_safe_to_save(Doc(text_col[1], lang='en')) is True
-    #     assert is_safe_to_save(Doc(text_col[0], lang='en')) is True
-    #     assert is_safe_to_save(Doc(text_col[1], lang='en')) is True
 
 
 class TestConvertorDecorators:

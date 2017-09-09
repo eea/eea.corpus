@@ -44,7 +44,7 @@
                   </h4>
                   <a href="/topics/${doc.name}/${corpus[0]}" >Topic Modeling</a>
                   /
-                  <a href="/categorize/${doc.name}/${corpus[0]}">Categorize</a>
+                  <a href="/classify/${doc.name}/${corpus[0]}">Classification</a>
                   /
                   <a href="/view/${doc.name}/${corpus[0]}/0">View</a>
 

@@ -49,3 +49,8 @@ class TestCreateCorpus:
         ]
 
         # TODO: finish test
+
+
+class TestClassificiationView:
+    def test_schema(self):
+        pass
