@@ -31,13 +31,17 @@ water abstraction  CSI CSI018 WAT WAT001 018 001
 
 
 class TestNounChunks:
-    def make_one(self, mode):
+    def make_one(self, mode, drop=True, min_freq=1):
         from eea.corpus.processing.noun_chunks import process
         from textacy.doc import Doc
 
         doc = Doc(TEXT)
 
-        settings = {'mode': mode}
+        settings = {
+            'mode': mode,
+            'drop_determiners': drop,
+            'min_freq': min_freq
+        }
         stream = process([doc], {}, **settings)
 
         return next(stream)
@@ -48,7 +52,7 @@ class TestNounChunks:
         assert 'renewable_water' in res.text
         assert 'renewable water' not in res.text
 
-        assert 'A_positive_development' in res.text
+        assert 'positive_development' in res.text
         assert 'A positive development' not in res.text
 
         assert 'In general' in res.text
@@ -59,7 +63,7 @@ class TestNounChunks:
         assert 'renewable_water' in res.text
         assert 'renewable water' in res.text
 
-        assert 'A_positive_development' in res.text
+        assert 'positive_development' in res.text
         assert 'A positive development' in res.text
 
         assert 'In general' in res.text
@@ -70,11 +74,11 @@ class TestNounChunks:
         assert 'renewable_water' in res.text
         assert 'renewable water' not in res.text
 
-        assert 'A_positive_development' in res.text
+        assert 'positive_development water_abstraction' in res.text
         assert 'A positive development' not in res.text
 
         assert 'In general' not in res.text
 
     def test_schema(self):
         from eea.corpus.processing.noun_chunks import NounChunks
-        assert len(NounChunks().children) == 1
+        assert len(NounChunks().children) == 3
