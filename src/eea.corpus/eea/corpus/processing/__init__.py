@@ -131,6 +131,8 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
         # previous pipeline steps
         'step_id': None,
     }
+    # if not preview_mode:
+    #     import pdb; pdb.set_trace()
 
     for (component_name, step_id, kwargs) in pipeline:
         env['step_id'] = step_id

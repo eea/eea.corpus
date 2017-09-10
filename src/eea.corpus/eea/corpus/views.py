@@ -181,7 +181,7 @@ class CreateCorpusView(FormView):
 
         return schemas
 
-    def get_pipeline_components(self):
+    def get_pipeline_components(self, appstruct):
         """ Returns a pipeline, a list of (process, schema name, arguments)
 
         It uses the request to understand the structure of the pipeline. The
@@ -193,10 +193,10 @@ class CreateCorpusView(FormView):
 
         pipeline = []
 
-        for name, params in self._get_sorted_component_names(self.request):
-            kwargs = params.copy()
-            kwargs.pop('schema_type')
-            s = (params['schema_type'], name, kwargs)
+        for name, _ in self._get_sorted_component_names(self.request):
+            kwargs = appstruct[name]
+            schema_type = kwargs.pop('schema_type')
+            s = (schema_type, name, kwargs)
             pipeline.append(s)
 
         return pipeline
@@ -241,7 +241,7 @@ class CreateCorpusView(FormView):
         pass
 
     def generate_corpus_success(self, appstruct):
-        pipeline = self.get_pipeline_components()
+        pipeline = self.get_pipeline_components(appstruct)
 
         s = appstruct.copy()
         s['doc'] = self.document

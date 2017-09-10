@@ -4,7 +4,7 @@ from eea.corpus.utils import corpus_base_path
 from eea.corpus.utils import extract_corpus_id
 from rq.decorators import job
 from textacy import fileio, Corpus
-from textacy.doc import Doc
+# from textacy.doc import Doc
 import json
 import logging
 import os.path

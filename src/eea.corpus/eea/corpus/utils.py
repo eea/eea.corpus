@@ -180,7 +180,7 @@ def hashed_id(items):
 
 
 def set_text(doc, text):
-    """ A function that converts any possible input type to a textacy Doc
+    """ Build a new doc based on doc's metadata and provided text
     """
 
     return Doc(text, metadata=doc.metadata, lang='en')
