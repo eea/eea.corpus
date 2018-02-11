@@ -10,8 +10,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/0
     volumes:
-      - ./src/eea.corpus/eea:/src/eea.corpus/eea
-      - ./src/setup.py:/src/setup.py
+      - ./src/:/src/
       - corpus-data:/corpus
       # - ./corpus:/corpus
 

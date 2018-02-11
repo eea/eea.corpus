@@ -1,22 +1,33 @@
+# TODO: add missing import
+
 import logging
 
-from colander import Schema
+import colander
 
 from eea.corpus.processing import pipeline_component
-from eea.corpus.utils import set_text, tokenizer
+from eea.corpus.utils import set_text
 
 logger = logging.getLogger('eea.corpus')
 
 
-class Tokenizer(Schema):
+class RegexTokenizer(colander.Schema):
     """ Schema for the Tokenizer processing.
     """
 
     description = "Simple, dumb tokenizer. Strips non-alpha and small words"
 
+    regex = colander.SchemaNode(
+        colander.String(),
+        title="Regular expression",
+        missing="",
+        # usable for tokenizing code
+        # based on http://blog.aylien.com/source-code-classification-using-deep-learning/
+        default=r'[\w\']+|[""!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~""\\]',
+    )
 
-@pipeline_component(schema=Tokenizer,
-                    title="Simple text tokenization")
+
+@pipeline_component(schema=RegexTokenizer,
+                    title="Regex based tokenizer")
 def process(content, env, **settings):
     """ Tokenization
     """

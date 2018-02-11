@@ -8,7 +8,7 @@ WORKDIR /src/eea.corpus
 
 RUN pip --no-cache-dir install -U -r requirements.txt
 
-RUN python -m spacy.en.download all
+RUN python -m spacy download en
 
 # convert phrasemachine to python3 code
 RUN cd /usr/local/lib/python3.5/site-packages/phrasemachine \
