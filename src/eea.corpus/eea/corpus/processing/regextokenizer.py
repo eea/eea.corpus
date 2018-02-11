@@ -1,6 +1,7 @@
 # TODO: add missing import
 
 import logging
+import re
 
 import colander
 
@@ -20,10 +21,17 @@ class RegexTokenizer(colander.Schema):
         colander.String(),
         title="Regular expression",
         missing="",
-        # usable for tokenizing code
-        # based on http://blog.aylien.com/source-code-classification-using-deep-learning/
+        # usable for tokenizing code, based on
+        # http://blog.aylien.com/source-code-classification-using-deep-learning
         default=r'[\w\']+|[""!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~""\\]',
     )
+
+
+def tokenizer(text, regex):
+    """ Tokenizes text. Returns lists of tokens (words)
+    """
+
+    return [x for x in re.findall(regex, text) if x]
 
 
 @pipeline_component(schema=RegexTokenizer,
@@ -32,8 +40,10 @@ def process(content, env, **settings):
     """ Tokenization
     """
 
+    regex = settings['regex']
+
     for doc in content:
-        text = " ".join(tokenizer(doc.text))
+        text = " ".join(tokenizer(doc.text, regex))
 
         try:
             yield set_text(doc, text)
