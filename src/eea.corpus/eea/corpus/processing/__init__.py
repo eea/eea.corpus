@@ -1,14 +1,14 @@
-from collections import namedtuple, OrderedDict
-from eea.corpus.processing.utils import component_phash_id
-from eea.corpus.processing.utils import get_pipeline_for_component
-from eea.corpus.utils import upload_location
+from collections import OrderedDict, namedtuple
 from itertools import zip_longest
-from pandas import read_csv
-from textacy.doc import Doc
+
 import colander
 import deform
 import venusian
 
+from eea.corpus.processing.utils import (component_phash_id,
+                                         get_pipeline_for_component)
+from eea.corpus.utils import upload_location
+from pandas import read_csv
 
 # container for registered pipeline components
 pipeline_registry = OrderedDict()
@@ -85,6 +85,7 @@ def pipeline_component(schema, title, actions=None):
             return func
 
         venusian.attach(process, callback)
+
         return process
 
     return decorator
@@ -114,8 +115,9 @@ def build_pipeline(file_name, text_column, pipeline, preview_mode=True):
     stream = zip_longest(cs, ms)
 
     content_stream = (
-        Doc(text, lang='en', metadata=meta) for text, meta in stream
+        dict(text=text, metadata=meta) for text, meta in stream
         # strip rows where there's no text
+
         if text and isinstance(text, str)
     )
 

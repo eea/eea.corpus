@@ -1,14 +1,13 @@
-from eea.corpus.async import queue
-from eea.corpus.processing import build_pipeline
-from eea.corpus.utils import corpus_base_path
-from eea.corpus.utils import extract_corpus_id
-from rq.decorators import job
-from textacy import fileio, Corpus
 # from textacy.doc import Doc
 import json
 import logging
 import os.path
 
+from eea.corpus.async import queue
+from eea.corpus.processing import build_pipeline
+from eea.corpus.utils import CachingStream, corpus_base_path, extract_corpus_id
+from rq.decorators import job
+from textacy import io
 
 logger = logging.getLogger('eea.corpus')
 
@@ -38,22 +37,22 @@ class DocStream:
 
     def __init__(self, docs):
         self.docs = docs
-        self.n_tokens = 0
-        self.n_sents = 0
+        # self.n_tokens = 0
+        # self.n_sents = 0
         self.n_docs = 0
 
     def __iter__(self):
         for doc in self.docs:
-            self.n_tokens += doc.n_tokens
-            self.n_sents += doc.n_sents
+            # self.n_tokens += doc.n_tokens
+            # self.n_sents += doc.n_sents
             self.n_docs += 1
             yield doc
 
     def get_statistics(self):
         return {
             'docs': self.n_docs,
-            'sentences': self.n_sents,
-            'tokens': self.n_tokens,
+            # 'sentences': self.n_sents,
+            # 'tokens': self.n_tokens,
             'lang': 'en',
         }
 
@@ -69,46 +68,29 @@ def build_corpus(pipeline, corpus_id, file_name, text_column, **kw):
 
     docs = build_pipeline(file_name, text_column, pipeline, preview_mode=False)
 
-    sdocs = DocStream(docs)
-    docs = ({'text': doc.text,
-             'metadata': doc.metadata} for doc in sdocs)
+    stream = DocStream(docs)
 
-    fileio.write_json_lines(
-        docs, fname, mode='wt',
-        ensure_ascii=True, separators=(',', ':')
+    io.json.write_json(
+        stream, fname, mode='wt', lines=True, ensure_ascii=True,
+        separators=(',', ':')
     )
     save_corpus_metadata(
-        sdocs.get_statistics(), file_name, corpus_id, text_column, **kw
+        stream.get_statistics(), file_name, corpus_id, text_column, **kw
     )
 
 
 def load_corpus(file_name, corpus_id):
-    """ Loads a textacy corpus from disk.
+    """ Loads a corpus from disk.
 
-    Requires the document name and the corpus id
+    Requires the document name and the corpus id. Returns a stream of dicts
     """
 
     cpath = corpus_base_path(file_name)
     fname = os.path.join(cpath, '%s_docs.json' % corpus_id)
 
-    # TODO: we shouldn't hardcode the language
-    corpus = Corpus('en')
-
-    texts = []
-    metas = []
-
-    with open(fname, 'rt') as f:
-        for line in f:
-            try:
-                j = json.loads(line)
-            except:
-                logger.warning("Could not load corpus line: %r", line)
-                continue
-            texts.append(j['text'])
-            metas.append(j['metadata'])
-
-    corpus.add_texts(texts, metadatas=metas)
-    return corpus
+    docs = io.json.read_json(fname, lines=True)
+    stream = CachingStream(docs)
+    yield from stream
 
 
 def get_corpus(request, doc=None, corpus_id=None):
@@ -119,6 +101,7 @@ def get_corpus(request, doc=None, corpus_id=None):
     # corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
 
     cache = request.corpus_cache
+
     if corpus_id not in cache.get(doc, []):
         corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
 

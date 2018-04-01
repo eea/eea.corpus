@@ -16,11 +16,11 @@ class TestStopWords:
 
     def test_remove_stopwords(self):
         from eea.corpus.processing.stopwords import process
-        from textacy.doc import Doc
+        # from textacy.doc import Doc
 
-        content = process([Doc(self.text)], {})
+        doc = {'text': self.text, 'metadata': None}
+        content = process([doc], {})
         text = next(content)
 
-        assert text.n_tokens == 92
-        assert 'general' in text.text
-        assert 'from' not in text.text
+        assert 'general' in text['text']
+        assert 'from' not in text['text']

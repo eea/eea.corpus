@@ -1,9 +1,12 @@
-from eea.corpus.processing import pipeline_component
-from eea.corpus.utils import tokenize, set_text
-from textacy.extract import noun_chunks
+import logging
+
 import colander
 import deform.widget
-import logging
+
+from eea.corpus.processing import pipeline_component
+from eea.corpus.utils import set_text, tokenize
+from textacy.doc import Doc
+from textacy.extract import noun_chunks
 
 logger = logging.getLogger('eea.corpus')
 
@@ -57,17 +60,18 @@ def process(content, env, **settings):
     min_freq = int(settings['min_freq'])
 
     for doc in content:
+        text = doc['text']
+
         try:
-            ncs = [x.text for x in noun_chunks(doc,
+            td = Doc(text)
+            ncs = [x.text for x in noun_chunks(td,
                                                drop_determiners=drop_deter,
                                                min_freq=min_freq)]
         except Exception:
             logger.exception("Error extracting noun chunks %r", doc)
+
             continue
 
-        text = doc.text
-
-        # TODO: see if able to use Doc.merge for replacements
         if mode == 'tokenize':
             for nc in ncs:
                 text = text.replace(nc, tokenize(nc))
@@ -82,4 +86,5 @@ def process(content, env, **settings):
             yield set_text(doc, text)
         except Exception:
             logger.exception("Error in converting to Doc %r", text)
+
             continue

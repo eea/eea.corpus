@@ -1,9 +1,10 @@
-from eea.corpus.schema import ClassifficationModelSchema
-from eea.corpus.utils import tokenizer
-from eea.corpus.corpus import get_corpus
+import pyramid.httpexceptions as exc
 from pyramid.view import view_config
 from pyramid_deform import FormView
-import pyramid.httpexceptions as exc
+
+from eea.corpus.corpus import get_corpus
+from eea.corpus.schema import ClassifficationModelSchema
+from eea.corpus.utils import tokenizer
 
 
 @view_config(route_name="corpus_classify",
@@ -23,8 +24,10 @@ class CreateClassificationModelView(FormView):
         """
 
         corpus = get_corpus(self.request)
+
         if corpus is None:
             raise exc.HTTPNotFound()
+
         return corpus
 
     def metadata(self):
@@ -32,6 +35,7 @@ class CreateClassificationModelView(FormView):
         """
         # TODO: show info about processing and column
         corpus = self.corpus()
+
         return {
             'docs': corpus.n_docs,
             'sentences': corpus.n_sents,
@@ -41,12 +45,12 @@ class CreateClassificationModelView(FormView):
 
     def classify_success(self, appstruct):
         corpus = self.corpus()
-        pass
 
     def fasttext_success(self, appstruct):
         from itertools import islice
         # from pyfasttext import FastText
 
+        import pdb; pdb.set_trace()
         corpus = self.corpus()
         docs = [doc for doc in corpus
                 if not isinstance(doc.metadata['Category Path'], float)]
@@ -58,6 +62,7 @@ class CreateClassificationModelView(FormView):
 
         print('Writing corpus to disk')
         lines = []
+
         for doc in train_docs:
             labels = doc.metadata['Category Path'].replace('/', ' __label__')
             labels = labels.strip()

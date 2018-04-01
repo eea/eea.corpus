@@ -1,5 +1,3 @@
-# TODO: add missing import
-
 import logging
 import re
 
@@ -15,7 +13,7 @@ class RegexTokenizer(colander.Schema):
     """ Schema for the Tokenizer processing.
     """
 
-    description = "Simple, dumb tokenizer. Strips non-alpha and small words"
+    description = "Use a regular expression to tokenize text"
 
     regex = colander.SchemaNode(
         colander.String(),
@@ -43,7 +41,7 @@ def process(content, env, **settings):
     regex = settings['regex']
 
     for doc in content:
-        text = " ".join(tokenizer(doc.text, regex))
+        text = " ".join(tokenizer(doc['text'], regex))
 
         try:
             yield set_text(doc, text)

@@ -1,11 +1,13 @@
 """ Get the text from potential html strings using bs4
 """
 
+import logging
+
 from bs4 import BeautifulSoup
 from colander import Schema
-from eea.corpus.processing import pipeline_component    # , needs_text_input
+
+from eea.corpus.processing import pipeline_component  # , needs_text_input
 from eea.corpus.utils import set_text
-import logging
 
 logger = logging.getLogger('eea.corpus')
 
@@ -20,7 +22,7 @@ class BeautifulSoupText(Schema):
                     title="Strip HTML tags")
 def process(content, env, **settings):
     for doc in content:
-        text = doc.text
+        text = doc['text']
         try:
             soup = BeautifulSoup(text, 'html.parser')
             clean = soup.get_text()
@@ -29,6 +31,7 @@ def process(content, env, **settings):
                 "BS4 Processor: got an error in extracting content: %r",
                 doc
             )
+
             continue
 
         try:
@@ -38,4 +41,5 @@ def process(content, env, **settings):
                 "BS4 Processor: got an error converting to Doc: %r",
                 doc
             )
+
             continue

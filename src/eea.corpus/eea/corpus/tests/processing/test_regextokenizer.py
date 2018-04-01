@@ -21,15 +21,12 @@ class TestRegexTokenizer:
 
     def test_from_doc(self):
         from eea.corpus.processing.regextokenizer import process
-        from textacy.doc import Doc
-
-        # from eea.corpus.processing.regextokenizer import RegexTokenizer
 
         pattern = r'[\w\']+|[""!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~""\\]'
 
-        doc = Doc(TEXT)
+        doc = {'text': TEXT, 'metadata': None}
 
         res = next(process([doc], {}, regex=pattern))
-        assert res.text.startswith(
+        assert res['text'].startswith(
             "def process ( content , env , * * settings )"
         )

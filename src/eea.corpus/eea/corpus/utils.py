@@ -1,14 +1,16 @@
 from __future__ import unicode_literals
-from collections import defaultdict
-from cytoolz import compose
-from textacy.doc import Doc
+
 import hashlib
 import json
 import logging
 import os
 import random
 import string
+from collections import defaultdict
 
+from cytoolz import compose
+
+# from textacy.doc import Doc
 
 logger = logging.getLogger('eea.corpus')
 
@@ -26,14 +28,17 @@ def corpus_base_path(file_name):
 
     varpath = os.path.join(CORPUS_STORAGE, 'var')
     base = os.path.join(varpath, file_name)
+
     if not os.path.exists(base):
         os.makedirs(base)
+
     return base
 
 
 def delete_corpus(file_name, corpus_id):
     assert len(corpus_id) > 10
     cp = corpus_base_path(file_name)
+
     for f in os.listdir(cp):
         if f.startswith(corpus_id):
             fp = os.path.join(cp, f)
@@ -45,6 +50,7 @@ def upload_location(file_name):
     """
 
     assert not file_name.startswith('.')
+
     return os.path.join(CORPUS_STORAGE, file_name)
 
 
@@ -59,11 +65,13 @@ def available_corpus(file_name):
     """
 
     base = corpus_base_path(file_name)
+
     if not os.path.exists(base):
         return []
 
     res = []
     files = defaultdict(list)
+
     for fn in os.listdir(base):
         if '_' not in fn:
             continue
@@ -74,6 +82,7 @@ def available_corpus(file_name):
             if len(cfs) != len(('docs', 'info')):
                 logger.warning("Not a valid corpus: %s (%s)",
                                file_name, corpus)
+
                 continue
             res.append(corpus)
 
@@ -86,6 +95,7 @@ def corpus_info_path(file_name, corpus_id):
     cpath = corpus_base_path(file_name)      # corpus_id
     meta_name = "{0}_info.json".format(corpus_id)
     meta_path = os.path.join(cpath, meta_name)
+
     return meta_path
 
 
@@ -109,11 +119,14 @@ def available_documents(request):
     res = []
 
     docs = [f for f in os.listdir(CORPUS_STORAGE) if f.endswith('.csv')]
+
     for name in docs:
         cpath = corpus_base_path(name)
         corpuses = []
+
         if os.path.exists(cpath):
             files = defaultdict(list)
+
             for fn in os.listdir(cpath):
                 if '_' not in fn:
                     continue
@@ -123,6 +136,7 @@ def available_documents(request):
             for corpus, cfs in files.items():
                 if len(cfs) != len(('docs', 'info')):
                     logger.warning("Not a valid corpus: %s (%s)", name, corpus)
+
                     continue
                 meta = load_corpus_metadata(name, corpus)
                 corpuses.append((corpus, meta))
@@ -174,8 +188,10 @@ def hashed_id(items):
     """
     # same options will generate the same corpus id
     m = hashlib.sha224()
+
     for kv in items:
         m.update(str(kv).encode('ascii'))
+
     return m.hexdigest()
 
 
@@ -183,13 +199,14 @@ def set_text(doc, text):
     """ Build a new doc based on doc's metadata and provided text
     """
 
-    return Doc(text, metadata=doc.metadata, lang='en')
+    return {'text': text, 'metadata': doc['metadata']}
 
 
 def is_locked(fpath):
     """ Check if a lock file exists for given path
     """
     path = fpath + '.lock'
+
     return os.path.exists(path)
 
 
@@ -197,11 +214,13 @@ def schema_defaults(schema):
     """ Returns a mapping of fielname:defaultvalue
     """
     res = {}
+
     for child in schema.children:
         if child.default is not None:
             res[child.name] = child.default
         else:
             res[child.name] = child.missing
+
     return res
 
 
@@ -213,6 +232,7 @@ def tokenize(phrase, delimiter='_'):
     res = []
 
     # remove the 's in text
+
     for w in words:
         w = w.split("'")[0]
         res.append(w)
@@ -275,6 +295,7 @@ def tokenizer(text):
     """ Tokenizes text. Returns lists of tokens (words)
     """
     ignore_chars = "()*:\"><][#\n\t'^%?=&"
+
     for c in ignore_chars:
         text = text.replace(c, ' ')
     words = text.split(' ')
@@ -282,3 +303,30 @@ def tokenizer(text):
     text = list(handle_text(words))
 
     return text
+
+
+class CachingStream(object):
+    """ A caching stream. It passes and caches items in the stream
+    """
+
+    def __init__(self, stream):
+        self.stream = stream
+        self.cache = []
+        self.use_cache = False
+
+    def __iter__(self):
+        if self.use_cache:
+            return iter(self.cache)
+
+        return self
+
+    def __next__(self):
+        try:
+            value = next(self.stream)
+        except StopIteration:
+            self.use_cache = True
+            raise
+        else:
+            self.cache.append(value)
+
+        return value
