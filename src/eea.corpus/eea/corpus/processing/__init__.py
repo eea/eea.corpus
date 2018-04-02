@@ -5,9 +5,9 @@ import colander
 import deform
 import venusian
 
+from eea.corpus.config import upload_location
 from eea.corpus.processing.utils import (component_phash_id,
                                          get_pipeline_for_component)
-from eea.corpus.utils import upload_location
 from pandas import read_csv
 
 # container for registered pipeline components

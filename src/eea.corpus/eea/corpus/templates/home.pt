@@ -32,7 +32,7 @@
             <ul class="list-group" >
               <li class="list-group-item" tal:repeat="corpus doc.corpuses">
                 <div class="btn-group pull-right">
-                  <form method="POST" action="/delete/${doc.name}/${corpus[0]}">
+                  <form method="POST" action="/delete/${doc.name}/${corpus.corpus_id}">
                     <button class="btn btn-secondary" >
                       <span class="glyphicon glyphicon-trash"></span>
                     </button>
@@ -40,17 +40,16 @@
                 </div>
                 <div role="group">
                   <h4>
-                    ${corpus[1]['title']}
+                    ${corpus.title}
                   </h4>
-                  <a href="/topics/${doc.name}/${corpus[0]}" >Topic Modeling</a>
+                  <a href="/topics/${doc.name}/${corpus.title}" >Topic Modeling</a>
                   /
-                  <a href="/classify/${doc.name}/${corpus[0]}">Classification</a>
+                  <a href="/classify/${doc.name}/${corpus.corpus_id}">Classification</a>
                   /
-                  <a href="/view/${doc.name}/${corpus[0]}/0">View</a>
+                  <a href="/view/${doc.name}/${corpus.corpus_id}/0">View</a>
 
-                  <small>${corpus[1].get('created')}</small>
                   <p class="discreet">
-                  ${corpus[1]['description']}
+                  ${corpus.description}
                   </p>
                 </div>
               </li>

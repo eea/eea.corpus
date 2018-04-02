@@ -17,15 +17,15 @@ from pyramid.view import view_config
 from pyramid_deform import FormView
 
 from eea.corpus.async import queue
-from eea.corpus.corpus import build_corpus, get_corpus
+from eea.corpus.config import upload_location
+from eea.corpus.corpus import (available_documents, build_corpus,
+                               delete_corpus, extract_corpus_id, get_corpus)
 from eea.corpus.processing import build_pipeline, pipeline_registry
 from eea.corpus.schema import (CreateCorpusSchema, TopicExtractionSchema,
                                UploadSchema)
 from eea.corpus.topics import (pyldavis_visualization, termite_visualization,
                                wordcloud_visualization)
-from eea.corpus.utils import (available_documents, delete_corpus,
-                              document_name, extract_corpus_id, hashed_id,
-                              rand, schema_defaults, upload_location)
+from eea.corpus.utils import document_name, hashed_id, rand, schema_defaults
 
 logger = logging.getLogger('eea.corpus')
 

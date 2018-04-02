@@ -12,6 +12,7 @@ the phrases need to be detected in the entire corpus. To overcome this, we do:
 import logging
 
 from eea.corpus.async import get_assigned_job
+from eea.corpus.corpus import corpus_base_path
 from eea.corpus.processing import pipeline_component
 from eea.corpus.processing.phrases.async import build_phrases
 from eea.corpus.processing.phrases.phrases import use_phrase_models
@@ -19,7 +20,6 @@ from eea.corpus.processing.phrases.schema import PhraseFinder
 from eea.corpus.processing.phrases.utils import (get_job_finish_status,
                                                  phrase_model_files)
 from eea.corpus.processing.utils import get_pipeline_for_component
-from eea.corpus.utils import corpus_base_path
 from redis.exceptions import ConnectionError
 
 logger = logging.getLogger('eea.corpus')

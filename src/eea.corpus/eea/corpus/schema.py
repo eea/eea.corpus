@@ -1,9 +1,10 @@
-from colander import Int, Schema, SchemaNode, String, Float, Set
-from eea.corpus.processing import pipeline_registry
-from eea.corpus.utils import upload_location
 import colander
 import deform
+from colander import Float, Int, Schema, SchemaNode, Set, String
+
 import pandas as pd
+from eea.corpus.config import upload_location
+from eea.corpus.processing import pipeline_registry
 
 
 class Store(dict):
@@ -17,6 +18,7 @@ tmpstore = Store()
 def csv_file_columns(request):
     md = request.matchdict or {}
     name = md.get('doc')
+
     if name:
         path = upload_location(name)        # TODO: move this to utils
         f = pd.read_csv(path)
@@ -127,6 +129,7 @@ class TopicExtractionSchema(Schema):
 def pipeline_components_widget(node, kw):
     values = [('', '-Select-')]
     values += [(p.name, p.title) for p in pipeline_registry.values()]
+
     return deform.widget.SelectWidget(
             template="pipeline_select",
             values=values,

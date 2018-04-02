@@ -5,9 +5,9 @@ class TestCorpus:
     """ Tests for the Corpus class
     """
 
-    @patch('eea.corpus.corpus.io')
+    @patch('eea.corpus.corpus.load_corpus_metadata')
     @patch('eea.corpus.corpus.corpus_base_path')
-    def test_corpus_caching(self, corpus_base_path, io):
+    def test_corpus_caching(self, corpus_base_path, load_corpus_metadata):
         from eea.corpus.corpus import Corpus
 
         corpus = Corpus('filename', 'corpusid')
@@ -22,9 +22,9 @@ class TestCorpus:
         assert corpus._use_cache is True
         assert len(corpus._cache) == 100
 
-    @patch('eea.corpus.corpus.io')
+    @patch('eea.corpus.corpus.load_corpus_metadata')
     @patch('eea.corpus.corpus.corpus_base_path')
-    def test_corpus_metadata(self, corpus_base_path, io):
+    def test_corpus_metadata(self, corpus_base_path, load_corpus_metadata):
         from eea.corpus.corpus import Corpus
 
         corpus = Corpus('a', 'b')
