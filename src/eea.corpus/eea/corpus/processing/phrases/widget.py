@@ -1,12 +1,13 @@
-from deform.widget import MappingWidget
-from deform.widget import default_resource_registry
-from eea.corpus.processing.utils import component_phash_id
-from eea.corpus.processing.utils import get_pipeline_for_component
-from eea.corpus.async import get_assigned_job
-from eea.corpus.utils import corpus_base_path
-from pyramid.threadlocal import get_current_request
 import logging
 import os.path
+
+from deform.widget import MappingWidget, default_resource_registry
+from pyramid.threadlocal import get_current_request
+
+from eea.corpus.async import get_assigned_job
+from eea.corpus.processing.utils import (component_phash_id,
+                                         get_pipeline_for_component)
+from eea.corpus.utils import corpus_base_path
 
 logger = logging.getLogger('eea.corpus')
 
@@ -63,10 +64,12 @@ class PhraseFinderWidget(MappingWidget):
             if f.startswith(cpath):    # it's an ngram model
                 logger.info("Phrase widget: found a phrase model at %s", cpath)
                 values['job_status'] = 'preview_available'
+
                 return values
 
         # look for a job created for this model
         job = get_assigned_job(phash_id)
+
         if job is not None:
             values['job_status'] = 'preview_' + job.get_status()
 

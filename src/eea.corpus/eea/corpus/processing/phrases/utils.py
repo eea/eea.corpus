@@ -1,7 +1,8 @@
-from eea.corpus.async import get_assigned_job
-from rq.job import JobStatus as JS
 import os
 import time
+
+from eea.corpus.async import get_assigned_job
+from rq.job import JobStatus as JS
 
 
 def phrase_model_files(base_path, phash_id):
@@ -15,6 +16,7 @@ def phrase_model_files(base_path, phash_id):
     # TODO: test that the phrase model file is "finished"
 
     files = []
+
     for name in sorted(os.listdir(base_path)):
         if (name != base_name) and name.startswith(base_name):
             files.append(os.path.join(base_path, name))

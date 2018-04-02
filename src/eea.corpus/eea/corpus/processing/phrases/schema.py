@@ -1,7 +1,8 @@
-from colander import Schema
-from eea.corpus.processing.phrases.widget import PhraseFinderWidget
 import colander
 import deform.widget
+from colander import Schema
+
+from eea.corpus.processing.phrases.widget import PhraseFinderWidget
 
 
 class PhraseFinder(Schema):

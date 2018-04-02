@@ -1,10 +1,11 @@
+import logging
+import os.path
+
 from eea.corpus.async import queue
 from eea.corpus.processing import build_pipeline
 from eea.corpus.processing.phrases.phrases import build_phrase_models
 from eea.corpus.utils import corpus_base_path
 from rq.decorators import job
-import logging
-import os.path
 
 logger = logging.getLogger('eea.corpus')
 

@@ -9,17 +9,18 @@ the phrases need to be detected in the entire corpus. To overcome this, we do:
     * Inform the user, in the UI, about the availability of the preview
 """
 
+import logging
+
 from eea.corpus.async import get_assigned_job
 from eea.corpus.processing import pipeline_component
 from eea.corpus.processing.phrases.async import build_phrases
 from eea.corpus.processing.phrases.phrases import use_phrase_models
 from eea.corpus.processing.phrases.schema import PhraseFinder
-from eea.corpus.processing.phrases.utils import get_job_finish_status
-from eea.corpus.processing.phrases.utils import phrase_model_files
+from eea.corpus.processing.phrases.utils import (get_job_finish_status,
+                                                 phrase_model_files)
 from eea.corpus.processing.utils import get_pipeline_for_component
 from eea.corpus.utils import corpus_base_path
 from redis.exceptions import ConnectionError
-import logging
 
 logger = logging.getLogger('eea.corpus')
 
@@ -53,12 +54,14 @@ def preview_phrases(content, env, settings):
     # ``cached_phrases`` should have taken care of it
     base_path = corpus_base_path(file_name)
     files = phrase_model_files(base_path, phash_id)
+
     if files:
         raise StopIteration
 
     logger.info("Phrase processing: need phrase model id %s", phash_id)
 
     job = get_assigned_job(phash_id)
+
     if job is None:
         phrase_model_pipeline = get_pipeline_for_component(env)
         try:
@@ -105,6 +108,7 @@ def produce_phrases(content, env, settings):
 
     base_path = corpus_base_path(file_name)
     files = phrase_model_files(base_path, phash_id)
+
     if files:
         raise StopIteration
 
@@ -151,6 +155,7 @@ def cached_phrases(content, env, settings):
     """
     base_path = corpus_base_path(env['file_name'])
     files = phrase_model_files(base_path, env['phash_id'])
+
     if not files:
         raise StopIteration
 
