@@ -6,10 +6,13 @@ class ClassVocab:
         if isinstance(k, float):
             k = 'empty'
         k = [x for x in k.split('/') if x][0]
+
         if k not in self.vocab:
             x = len(self.vocab)
             self.vocab[k] = x
+
             return x
+
         return self.vocab[k]
 
 
@@ -32,8 +35,8 @@ def train_model(corpus):
 
     from sklearn.feature_extraction.text import CountVectorizer
     vect = CountVectorizer(input='content', strip_accents='unicode',
-                            tokenizer=tokenizer,  # stop_words='english',
-                            max_features=5000)
+                           tokenizer=tokenizer,  # stop_words='english',
+                           max_features=5000)
 
     X = vect.fit_transform(docs)
 

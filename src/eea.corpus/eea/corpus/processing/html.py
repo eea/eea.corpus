@@ -21,6 +21,7 @@ class BeautifulSoupText(Schema):
 @pipeline_component(schema=BeautifulSoupText,
                     title="Strip HTML tags")
 def process(content, env, **settings):
+
     for doc in content:
         text = doc['text']
         try:

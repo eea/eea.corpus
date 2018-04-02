@@ -1,20 +1,9 @@
 from pyramid.config import Configurator
 from pyramid.session import SignedCookieSessionFactory
+
 import matplotlib
 
-
 matplotlib.use('SVG')       # use SVG backend.
-
-
-CACHE = {}      # really dummy and simple way to cache corpuses
-
-
-def corpus_cache(request):
-    """ Available as request.corpus_cache.
-
-    Avoids passing the cache around various modules
-    """
-    return CACHE
 
 
 def main(global_config, **settings):
@@ -39,8 +28,6 @@ def main(global_config, **settings):
     config.add_route('corpus_classify', '/classify/{doc}/{corpus}')
     config.add_route('view_job', '/job-view/{doc}/{corpus}/job/{job}')
     config.add_route('demo', '/demo')
-
-    config.add_request_method(corpus_cache, reify=True)
 
     config.include('eea.corpus.processing')
 

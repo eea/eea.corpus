@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 class TestCorpus:
@@ -61,7 +61,7 @@ class TestCorpus:
     @patch('eea.corpus.corpus.corpus_base_path')
     def test_load_corpus(self, corpus_base_path):
         from pkg_resources import resource_filename
-        from eea.corpus.corpus import load_corpus
+        from eea.corpus.corpus import load_corpus, CORPUS_CACHE
 
         base_path = resource_filename('eea.corpus', 'tests/fixtures/')
         corpus_base_path.return_value = base_path
@@ -76,3 +76,35 @@ class TestCorpus:
 
         assert docs[1]['text'] == 'Second time'
         assert docs[1]['metadata'] == {'3': 4}
+
+        CORPUS_CACHE.clear()
+
+    @patch('eea.corpus.corpus.extract_corpus_id')
+    @patch('eea.corpus.corpus.load_corpus')
+    def test_get_corpus(self, load_corpus, extract_corpus_id):
+        from eea.corpus.corpus import get_corpus, CORPUS_CACHE
+
+        request = Mock()
+        corpus = Mock()
+
+        extract_corpus_id.return_value = ['doc-a', 'corpus-b']
+        load_corpus.return_value = None
+
+        assert get_corpus(request) is None
+        assert CORPUS_CACHE == {}
+
+        load_corpus.return_value = corpus
+
+        res = get_corpus(request)
+        assert extract_corpus_id.call_count == 2
+        assert res is corpus
+
+        assert 'doc-a' in CORPUS_CACHE
+        assert CORPUS_CACHE['doc-a']['corpus-b'] is corpus
+
+        res = get_corpus(request, 'doc-a', 'corpus-b')
+        assert extract_corpus_id.call_count == 2
+        assert res is corpus
+        assert CORPUS_CACHE['doc-a']['corpus-b'] is corpus
+
+        CORPUS_CACHE.clear()

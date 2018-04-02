@@ -10,8 +10,6 @@ from collections import defaultdict
 
 from cytoolz import compose
 
-# from textacy.doc import Doc
-
 logger = logging.getLogger('eea.corpus')
 
 
@@ -238,30 +236,6 @@ def tokenize(phrase, delimiter='_'):
         res.append(w)
 
     return delimiter.join(res)
-
-
-# from spacy.tokens.doc import Doc as SpacyDoc
-# def is_safe_to_save(doc):
-#     """ Is this doc safe to save?
-#
-#     For some reason there's a bug in saving/loading spacy Docs. Here we test
-#     that the doc can be loaded back from its serialized representation.
-#
-#     For further reference, see:
-#
-#         * https://github.com/explosion/spaCy/issues/1045
-#         * https://github.com/explosion/spaCy/issues/985
-#
-#     """
-#     text = doc.text[:100]
-#     vocab = doc.spacy_vocab
-#     bs = doc.spacy_doc.to_bytes()
-#     try:
-#         SpacyDoc(vocab).from_bytes(bs)
-#         return True
-#     except Exception:
-#         logger.warning("Will not save %s, it will not be loadable", text)
-#         return False
 
 
 def handle_slash(words):

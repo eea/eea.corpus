@@ -79,6 +79,9 @@ def build_corpus(pipeline, corpus_id, file_name, text_column, **kw):
     )
 
 
+CORPUS_CACHE = {}      # really dummy and simple way to cache corpuses
+
+
 def load_corpus(file_name, corpus_id):
     """ Loads a corpus from disk.
 
@@ -100,16 +103,14 @@ def get_corpus(request, doc=None, corpus_id=None):
     assert doc and corpus_id
     # corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
 
-    cache = request.corpus_cache
-
-    if corpus_id not in cache.get(doc, []):
+    if corpus_id not in CORPUS_CACHE.get(doc, []):
         corpus = load_corpus(file_name=doc, corpus_id=corpus_id)
 
         if corpus is None:
             return None
 
-        cache[doc] = {
+        CORPUS_CACHE[doc] = {
             corpus_id: corpus
         }
 
-    return cache[doc][corpus_id]
+    return CORPUS_CACHE[doc][corpus_id]

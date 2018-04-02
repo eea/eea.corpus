@@ -1,40 +1,31 @@
 """ Pyramid views. Main UI for the eea.corpus
 """
 
-from deform import Button
-from deform import Form
-from deform import ZPTRendererFactory
-from eea.corpus.async import queue
-from eea.corpus.corpus import build_corpus
-from eea.corpus.corpus import get_corpus
-from eea.corpus.processing import build_pipeline
-from eea.corpus.processing import pipeline_registry
-from eea.corpus.schema import CreateCorpusSchema
-from eea.corpus.schema import TopicExtractionSchema
-from eea.corpus.schema import UploadSchema
-from eea.corpus.topics import pyldavis_visualization
-from eea.corpus.topics import termite_visualization
-from eea.corpus.topics import wordcloud_visualization
-from eea.corpus.utils import available_documents
-from eea.corpus.utils import delete_corpus
-from eea.corpus.utils import document_name
-from eea.corpus.utils import extract_corpus_id
-from eea.corpus.utils import hashed_id
-from eea.corpus.utils import rand
-from eea.corpus.utils import schema_defaults
-from eea.corpus.utils import upload_location
+import logging
+import sys
+import traceback as tb
 from itertools import islice
+
+import deform
+import pyramid.httpexceptions as exc
+from deform import Button, Form, ZPTRendererFactory
 from peppercorn import parse
 from pkg_resources import resource_filename
 from pyramid.httpexceptions import HTTPFound
 from pyramid.renderers import render
 from pyramid.view import view_config
 from pyramid_deform import FormView
-import deform
-import logging
-import pyramid.httpexceptions as exc
-import sys
-import traceback as tb
+
+from eea.corpus.async import queue
+from eea.corpus.corpus import build_corpus, get_corpus
+from eea.corpus.processing import build_pipeline, pipeline_registry
+from eea.corpus.schema import (CreateCorpusSchema, TopicExtractionSchema,
+                               UploadSchema)
+from eea.corpus.topics import (pyldavis_visualization, termite_visualization,
+                               wordcloud_visualization)
+from eea.corpus.utils import (available_documents, delete_corpus,
+                              document_name, extract_corpus_id, hashed_id,
+                              rand, schema_defaults, upload_location)
 
 logger = logging.getLogger('eea.corpus')
 
@@ -49,6 +40,7 @@ deform_renderer = ZPTRendererFactory(search_path)
 @view_config(route_name='home', renderer='templates/home.pt')
 def home(request):
     documents = available_documents(request)
+
     return {
         'project': 'EEA Corpus Server',
         'documents': documents
@@ -65,6 +57,7 @@ class UploadView(FormView):
 
     def save_success(self, appstruct):
         upload = appstruct.get('upload')
+
         if upload:
             fname = upload['filename']
             path = upload_location(fname)
@@ -73,6 +66,7 @@ class UploadView(FormView):
                     f.write(line)
 
         self.request.session.flash(u"Your changes have been saved.")
+
         return HTTPFound(location='/')
 
 
@@ -94,8 +88,10 @@ class TopicsView(FormView):
         """
 
         corpus = get_corpus(self.request)
+
         if corpus is None:
             raise exc.HTTPNotFound()
+
         return corpus
 
     def metadata(self):
@@ -103,6 +99,7 @@ class TopicsView(FormView):
         """
         # TODO: show info about processing and column
         corpus = self.corpus()
+
         return {
             'docs': corpus.n_docs,
             'sentences': corpus.n_sents,
@@ -129,6 +126,7 @@ class TopicsView(FormView):
         visualizer = MAP[method]
         vis = visualizer(corpus, topics, num_docs, ngrams, weighting, min_df,
                          max_df, mds)
+
         return vis
 
     def view_success(self, appstruct):
@@ -172,10 +170,12 @@ class CreateCorpusView(FormView):
 
         data = parse(request.POST.items())
         schemas = []        # establish position of widgets
+
         for k, v in self.request.POST.items():
             if (k == '__start__') and (':mapping' in v):
                 sk = v.split(':')[0]
                 parms = data[sk]
+
                 if isinstance(parms, dict) and parms.get('schema_type', None):
                     schemas.append((sk, data[sk]))
 
@@ -210,6 +210,7 @@ class CreateCorpusView(FormView):
 
         for c in schema.children:
             _type = c.get('schema_type')
+
             if _type:
                 # assume mapping schema
                 kw = appstruct.get(c.name, schema_defaults(c)).copy()
@@ -228,6 +229,7 @@ class CreateCorpusView(FormView):
         """
 
         schemas = []
+
         for name, params in self._get_sorted_component_names(self.request):
             _type = params['schema_type']
             p = pipeline_registry[_type]
@@ -265,6 +267,7 @@ class CreateCorpusView(FormView):
 
         schemas = self._schemas()
         schemas = self._apply_schema_edits(schemas, data)
+
         for s in schemas:
             schema.add(s)
 
@@ -275,6 +278,7 @@ class CreateCorpusView(FormView):
         kwargs.update(dict(self.form_options))
 
         self.form = Form(schema, renderer=deform_renderer, **kwargs)
+
         return self.form
 
     def _apply_schema_edits(self, schemas, data):
@@ -285,6 +289,7 @@ class CreateCorpusView(FormView):
 
             if "remove_%s_success" % s.name in data:
                 del schemas[i]
+
                 return schemas
 
             if "move_up_%s_success" % s.name in data:
@@ -294,6 +299,7 @@ class CreateCorpusView(FormView):
                 this, other = schemas[i], schemas[i-1]
                 schemas[i-1] = this
                 schemas[i] = other
+
                 return schemas
 
             if "move_down_%s_success" % s.name in data:
@@ -303,6 +309,7 @@ class CreateCorpusView(FormView):
                 this, other = schemas[i], schemas[i+1]
                 schemas[i+1] = this
                 schemas[i] = other
+
                 return schemas
 
         return schemas
@@ -311,6 +318,7 @@ class CreateCorpusView(FormView):
         # re-validate form, it is possible to be changed
         appstruct = {}
         controls = list(self.request.POST.items())
+
         if controls:
             try:
                 appstruct = form.validate(controls)
@@ -320,6 +328,7 @@ class CreateCorpusView(FormView):
         schema = form.schema
         # now add new schemas, at the end of all others
         add_component = appstruct.pop('pipeline_components', None)
+
         if add_component:
             p = pipeline_registry[add_component]
             s = p.schema(name=rand(10), title=p.title,)
@@ -329,6 +338,7 @@ class CreateCorpusView(FormView):
             schema.add(w)
 
         # try to build a preview, if possible
+
         if appstruct.get('column'):
             pipeline = self.pipeline_from_schema(schema, appstruct)
             pstruct = self.request.create_corpus_pipeline_struct = {
@@ -356,6 +366,7 @@ class CreateCorpusView(FormView):
 def view_job(request):
     jobid = request.matchdict.get('job')
     job = queue.fetch_job(jobid)
+
     return {'job': job}
 
 
@@ -372,6 +383,7 @@ def handle_exc(context, request):
     _type, value, tr = sys.exc_info()
     error = " ".join(tb.format_exception(_type, value, tr))
     logger.error(error)
+
     return {
         'error': error
     }
@@ -382,14 +394,18 @@ def view_corpus(request):
     page = int(request.matchdict['page'])
     corpus = get_corpus(request)
 
-    if corpus is None or page > (corpus.n_docs - 1):
+    if corpus is None:
         raise exc.HTTPNotFound()
 
+    #  or page > (corpus.n_docs - 1)
+
     nextp = page + 1
+
     if nextp >= corpus.n_docs:
         nextp = None
 
     prevp = page - 1
+
     if prevp < 0:
         prevp = None
 

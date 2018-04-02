@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 class TestHTML:
@@ -25,6 +25,18 @@ class TestHTML:
         from eea.corpus.processing.html import process
 
         set_text.side_effect = ValueError()
+        doc = {'text': 'hello world', 'metadata': None}
+
+        stream = process([doc], {})
+        assert list(stream) == []
+
+    @patch('eea.corpus.processing.html.BeautifulSoup')
+    def test_get_text_with_error(self, BeautifulSoup):
+        from eea.corpus.processing.html import process
+
+        BeautifulSoup.return_value = Mock()
+        BeautifulSoup.return_value.get_text.side_effect = ValueError()
+
         doc = {'text': 'hello world', 'metadata': None}
 
         stream = process([doc], {})

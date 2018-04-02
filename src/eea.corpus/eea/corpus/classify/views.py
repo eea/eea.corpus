@@ -4,7 +4,9 @@ from pyramid_deform import FormView
 
 from eea.corpus.corpus import get_corpus
 from eea.corpus.schema import ClassifficationModelSchema
-from eea.corpus.utils import tokenizer
+
+
+# from eea.corpus.utils import tokenizer
 
 
 @view_config(route_name="corpus_classify",
@@ -107,4 +109,3 @@ class CreateClassificationModelView(FormView):
         print("Score %s" % self.score)
 
         # xx = model.predict_proba(test_lines, k=2)
-        # import pdb; pdb.set_trace()
