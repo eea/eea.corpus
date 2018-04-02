@@ -277,30 +277,3 @@ def tokenizer(text):
     text = list(handle_text(words))
 
     return text
-
-
-class CachingStream(object):
-    """ A caching stream. It passes and caches items in the stream
-    """
-
-    def __init__(self, stream):
-        self.stream = stream
-        self.cache = []
-        self.use_cache = False
-
-    def __iter__(self):
-        if self.use_cache:
-            return iter(self.cache)
-
-        return self
-
-    def __next__(self):
-        try:
-            value = next(self.stream)
-        except StopIteration:
-            self.use_cache = True
-            raise
-        else:
-            self.cache.append(value)
-
-        return value

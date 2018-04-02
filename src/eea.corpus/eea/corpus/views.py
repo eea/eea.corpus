@@ -394,10 +394,8 @@ def view_corpus(request):
     page = int(request.matchdict['page'])
     corpus = get_corpus(request)
 
-    if corpus is None:
+    if corpus is None or page > (corpus.n_docs - 1):
         raise exc.HTTPNotFound()
-
-    #  or page > (corpus.n_docs - 1)
 
     nextp = page + 1
 
@@ -411,7 +409,7 @@ def view_corpus(request):
 
     return {
         'corpus': corpus,
-        'doc': corpus[page],
+        'doc': next(islice(corpus, page, None)),
         'nextp': nextp,
         'prevp': prevp,
         'page': page

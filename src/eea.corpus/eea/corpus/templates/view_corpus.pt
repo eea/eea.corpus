@@ -6,7 +6,7 @@
   <div metal:fill-slot="full-width">
     <div class="row">
       <div class="col-md-12">
-        <h1>${corpus}</h1>
+        <h1>${corpus.title}</h1>
       </div>
     </div>
 
@@ -30,9 +30,11 @@
       </div>
 
       <div class="col-md-7" id="corpus-form">
-        <h4>
-          A document of ${doc.n_sents} sentences and ${doc.n_tokens} tokens
-        </h4>
+        <div tal:replace="nothing">
+          <h4>
+            A document of ${doc.n_sents} sentences and ${doc.n_tokens} tokens
+          </h4>
+        </div>
         <p>
           ${doc.text}
         </p>

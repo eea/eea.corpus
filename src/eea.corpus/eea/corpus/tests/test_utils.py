@@ -58,19 +58,3 @@ class TestConvertorDecorators:
         assert res is not doc
         assert res['text'] == 'second time with more words'
         assert res['metadata'] == {'1': 2}
-
-
-class TestCachingStream:
-    """ Tests for the CachingStream class
-    """
-
-    def test_it(self):
-        from eea.corpus.utils import CachingStream
-
-        docs = iter(range(100))
-        stream = CachingStream(docs)
-        x = list(stream)
-        assert len(x) == 100
-        assert len(list(stream)) == 100
-        assert len(list(stream)) == 100
-        assert stream.use_cache is True

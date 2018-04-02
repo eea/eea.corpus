@@ -1,5 +1,7 @@
+from unittest.mock import sentinel as S
+from unittest.mock import patch
+
 from pyramid import testing
-from unittest.mock import sentinel as S, patch
 
 
 class TestHome:
@@ -51,6 +53,6 @@ class TestCreateCorpus:
         # TODO: finish test
 
 
-class TestClassificiationView:
+class TestClassificationView:
     def test_schema(self):
         pass
