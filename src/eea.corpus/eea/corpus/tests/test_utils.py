@@ -51,14 +51,13 @@ class TestConvertorDecorators:
     """
 
     def test_set_text(self):
-        from textacy.doc import Doc
-        doc = Doc('hello world', metadata={'1': 2})
+        doc = dict(text='hello world', metadata={'1': 2})
         res = set_text(doc, 'second time with more words')
 
-        assert isinstance(res, Doc)
+        assert isinstance(res, dict)
         assert res is not doc
-        assert res.text == 'second time with more words'
-        assert res.metadata == {'1': 2}
+        assert res['text'] == 'second time with more words'
+        assert res['metadata'] == {'1': 2}
 
 
 class TestCachingStream:
