@@ -52,10 +52,9 @@ class CreateClassificationModelView(FormView):
         from itertools import islice
         # from pyfasttext import FastText
 
-        import pdb; pdb.set_trace()
         corpus = self.corpus()
         docs = [doc for doc in corpus
-                if not isinstance(doc.metadata['Category Path'], float)]
+                if not isinstance(doc['metadata']['Category Path'], float)]
 
         split = int(corpus.n_docs * 0.9)        # TODO: should be docs
 
@@ -66,10 +65,10 @@ class CreateClassificationModelView(FormView):
         lines = []
 
         for doc in train_docs:
-            labels = doc.metadata['Category Path'].replace('/', ' __label__')
+            labels = doc['metadata']['Category Path'].replace('/', ' __label__')
             labels = labels.strip()
             # labels = '__label__'+doc.metadata['Category Path'].split('/')[1]
-            text = doc.text.replace('\n', ' ')
+            text = doc['text'].replace('\n', ' ')
             line = " ".join([labels, text])
             lines.append(line)
 
@@ -83,11 +82,11 @@ class CreateClassificationModelView(FormView):
         test_lines = []
         with open('/tmp/corpus-test.txt', 'w') as f:
             for doc in test_docs:
-                labels = [x for x in doc.metadata['Category Path'].split('/')
+                labels = [x for x in doc['metadata']['Category Path'].split('/')
                           if x]
                 # labels = '__label__' + \
                 #     doc.metadata['Category Path'].split('/')[1]
-                test_lines.append(doc.text.replace('\n', ' '))
+                test_lines.append(doc['text'].replace('\n', ' '))
                 y_test.append(labels)
             f.write('\n'.join(test_lines))
 
