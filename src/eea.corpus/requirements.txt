@@ -20,7 +20,7 @@ decorator==4.2.1
 deform==2.0.4
 dill==0.2.7.1
 en-core-web-sm==2.0.0
-Flask==0.12.2
+Flask==1.0
 ftfy==4.4.3
 funcy==1.8
 future==0.16.0
