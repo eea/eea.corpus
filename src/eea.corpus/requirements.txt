@@ -96,7 +96,7 @@ ujson==1.35
 Unidecode==1.0.22
 urllib3==1.22
 venusian==1.1.0
-waitress==1.0.2
+waitress==1.4.2
 wcwidth==0.1.7
 webencodings==0.5.1
 WebOb==1.7.3
