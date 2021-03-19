@@ -32,7 +32,7 @@ idna==2.6
 ijson==2.3
 iso8601==0.1.11
 itsdangerous==0.24
-Jinja2==2.9.6
+Jinja2==2.11.3
 joblib==0.11
 Mako==1.0.7
 MarkupSafe==1.0
