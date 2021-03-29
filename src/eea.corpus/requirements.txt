@@ -59,7 +59,7 @@ preshed==1.0.0
 py==1.4.34
 pycparser==2.18
 pyemd==0.5.1
-Pygments==2.2.0
+Pygments==2.7.4
 pyLDAvis==2.1.1
 pyparsing==2.2.0
 Pyphen==0.9.4
