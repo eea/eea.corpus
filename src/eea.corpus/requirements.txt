@@ -56,7 +56,7 @@ plac==0.9.6
 plaster==0.5
 plaster-pastedeploy==0.4.1
 preshed==1.0.0
-py==1.4.34
+py==1.10.0
 pycparser==2.18
 pyemd==0.5.1
 Pygments==2.2.0
