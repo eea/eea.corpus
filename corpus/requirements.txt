@@ -24,7 +24,7 @@ pandas==0.19.2
 pathlib==1.0.1
 plac==0.9.6
 preshed==1.0.0
-py==1.4.33
+py==1.10.0
 pycparser==2.17
 pyemd==0.4.3
 pyLDAvis==2.1.1
