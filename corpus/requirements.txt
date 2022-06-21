@@ -18,7 +18,7 @@ MarkupSafe==1.0
 murmurhash==0.26.4
 networkx==1.11
 numexpr==2.6.2
-numpy==1.12.1
+numpy==1.22.0
 packaging==16.8
 pandas==0.19.2
 pathlib==1.0.1
