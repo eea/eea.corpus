@@ -13,7 +13,7 @@ future==0.16.0
 html5lib==0.999999999
 ijson==2.3
 Jinja2==2.9.6
-joblib==0.11
+joblib==1.2.0
 MarkupSafe==1.0
 murmurhash==0.26.4
 networkx==1.11
